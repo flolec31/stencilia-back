@@ -288,6 +288,32 @@ class AppointmentSubmissionIntegrationTest : AbstractAppointmentIntegrationTest(
             .andExpect(jsonPath("$.error").value("Appointment not found"))
     }
 
+    @Test
+    fun `verify already-verified appointment keeps original verifiedAt and returns 204`() {
+        val artist = createActivatedArtist()
+        val client = createClient()
+        val firstClick = Instant.parse("2026-11-17T10:00:00Z")
+        val form = createAppointment(artist, client, verifiedAt = firstClick)
+
+        mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+            .andExpect(status().isNoContent)
+
+        assertThat(appointmentRepository.findById(form.id).get().verifiedAt).isEqualTo(firstClick)
+    }
+
+    @Test
+    fun `verify already-verified appointment sends no email`() {
+        val artist = createActivatedArtist()
+        val client = createClient()
+        val form = createAppointment(artist, client, verifiedAt = Instant.parse("2026-11-17T10:00:00Z"))
+
+        mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+            .andExpect(status().isNoContent)
+
+        verify(emailService, never()).sendAppointmentNotificationEmail(any())
+        verify(emailService, never()).sendAppointmentRequestConfirmationEmail(any())
+    }
+
     // --- POST /appointment/{slug}/links ---
 
     private fun requestLinks(slug: String, email: String) =

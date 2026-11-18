@@ -54,9 +54,11 @@ class AppointmentSubmissionServiceImpl(
 
     @Transactional
     override fun verify(appointmentId: UUID) {
-        var appointment = appointmentRepository.findById(appointmentId).orElseThrow { AppointmentNotFoundException() }
+        val appointment = appointmentRepository.findById(appointmentId).orElseThrow { AppointmentNotFoundException() }
+        // Idempotent: subsequent clicks on the link must not move the received date or re-notify (issue #2).
+        if (appointment.verifiedAt != null) return
         appointment.verifiedAt = Instant.now()
-        appointment = appointmentRepository.save(appointment)
+        appointmentRepository.save(appointment)
         eventPublisher.publishEvent(AppointmentNotificationEmailRequested(appointment))
         eventPublisher.publishEvent(AppointmentRequestConfirmationEmailRequested(appointment))
     }
