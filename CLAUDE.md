@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 After completing any task, ask yourself: does this change introduce new endpoints, env vars, stack choices, conventions, or setup steps? If yes, update `CLAUDE.md` and/or `README.md` accordingly. Skip if nothing externally observable changed.
 
+## Issue references
+
+Issues live in two repos: `flolec31/stencilia-product` (product/epic level) and `flolec31/stencilia-back` (backend). **Every backend change references a stencilia-back issue**, never a product issue directly. When a product issue needs backend work, create a matching **daughter** issue in stencilia-back and attach it to the parent as a native GitHub **sub-issue** (cross-repo sub-issues are supported within the owner), so the parent/child hierarchy is real GitHub metadata, not body text; if front-end work is also needed, a sibling daughter is created in the front repo too. Wiring a sub-issue is a REST call on the **parent**: `gh api --method POST repos/flolec31/stencilia-product/issues/<parentNo>/sub_issues -F sub_issue_id=<childDbId>` where `<childDbId>` is the daughter's internal id (`gh api repos/flolec31/stencilia-back/issues/<childNo> --jq .id`), not its issue number.
+
+Why: GitHub's bare `#N` is repo-local (in a stencilia-back commit/PR, `#2` means back#2, not product#2), and closing keywords (`Closes #N`) only auto-close issues in the **same** repo — cross-repo auto-close is never honored. Routing every backend change through a local daughter means the existing `type(#N): subject (#PR)` commit convention (where `#N` is the stencilia-back issue) keeps working unchanged, and `Closes #N` on the PR still auto-closes on merge. Use a fully-qualified `owner/repo#N` only to *link* across repos, never expecting it to close anything. Branch names use the back issue number too (e.g. `fix/81-...`).
+
 ## Commands
 
 ```bash
