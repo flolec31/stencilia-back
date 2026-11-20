@@ -18,6 +18,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import com.stencilia.stenciliaback.alert.event.SupportMessageSubmittedEvent
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.context.ApplicationEventPublisher
@@ -71,7 +72,7 @@ class SupportMessageServiceImplTest {
     }
 
     @Test
-    fun `submit saves a message without a screenshot and publishes notification and confirmation events`() {
+    fun `submit saves a message without a screenshot and publishes notification, confirmation, and admin-alert events`() {
         `when`(tattooArtistService.findById(artistId)).thenReturn(artist)
         `when`(supportMessageRepository.save(savedCaptor.capture())).thenAnswer { savedCaptor.value }
         val request = SupportMessageRequestDto(type = SupportMessageType.HELP, message = "How do I change my slug?")
@@ -85,12 +86,16 @@ class SupportMessageServiceImplTest {
         assertThat(saved.screenshotKey).isNull()
         assertThat(saved.createdAt).isNotNull()
 
-        verify(eventPublisher, org.mockito.Mockito.times(2)).publishEvent(eventCaptor.capture())
+        verify(eventPublisher, org.mockito.Mockito.times(3)).publishEvent(eventCaptor.capture())
         val receivedEvent = eventCaptor.allValues.filterIsInstance<SupportMessageReceivedEmailRequested>().single()
         assertThat(receivedEvent.supportMessage).isEqualTo(saved)
         val confirmationEvent = eventCaptor.allValues.filterIsInstance<SupportMessageConfirmationEmailRequested>().single()
         assertThat(confirmationEvent.to).isEqualTo("artist@test.com")
         assertThat(confirmationEvent.artistName).isEqualTo("Test Artist")
+        val alertEvent = eventCaptor.allValues.filterIsInstance<SupportMessageSubmittedEvent>().single()
+        assertThat(alertEvent.slug).isEqualTo("test-artist")
+        assertThat(alertEvent.type).isEqualTo(SupportMessageType.HELP)
+        assertThat(alertEvent.artistEmail).isEqualTo("artist@test.com")
     }
 
     @Test

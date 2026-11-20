@@ -110,6 +110,11 @@ Swagger UI is disabled in production (`springdoc.swagger-ui.enabled: false`). En
 | `APP_STORAGE_ACCESS_KEY`         | Storage access key                                                              |
 | `APP_STORAGE_SECRET_KEY`         | Storage secret key                                                              |
 | `APP_STORAGE_REGION`             | SigV4 signing region (default `auto`; R2 uses `auto`, AWS a real region)        |
+| `APP_TELEGRAM_BOT_TOKEN`         | Telegram bot token for admin product/technical alerts (unset → alerts disabled) |
+| `APP_TELEGRAM_CHAT_ID`           | Telegram chat id the admin alerts are sent to (unset → alerts disabled)         |
+
+The list of **test accounts** (emails that fire no product alert and, later, count in no metric)
+is edited directly in the `test_account` DB table — there is no admin UI or endpoint for it.
 
 ## Deployment
 
