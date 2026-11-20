@@ -1,12 +1,10 @@
 package com.stencilia.stenciliaback.support.service.implementation
 
-import com.stencilia.stenciliaback.alert.event.SupportMessageSubmittedEvent
 import com.stencilia.stenciliaback.artist.service.TattooArtistService
 import com.stencilia.stenciliaback.storage.dto.ImageUploadResponseDto
 import com.stencilia.stenciliaback.storage.service.ImageUploadService
 import com.stencilia.stenciliaback.support.dto.SupportMessageRequestDto
-import com.stencilia.stenciliaback.support.event.SupportMessageConfirmationEmailRequested
-import com.stencilia.stenciliaback.support.event.SupportMessageReceivedEmailRequested
+import com.stencilia.stenciliaback.support.event.SupportMessageSubmittedEvent
 import com.stencilia.stenciliaback.support.repository.SupportMessageRepository
 import com.stencilia.stenciliaback.support.service.SupportMessageService
 import org.springframework.context.ApplicationEventPublisher
@@ -31,8 +29,6 @@ class SupportMessageServiceImpl(
     override fun submit(artistId: UUID, request: SupportMessageRequestDto) {
         val artist = tattooArtistService.findById(artistId)
         val saved = supportMessageRepository.save(request.toEntity(artist))
-        eventPublisher.publishEvent(SupportMessageReceivedEmailRequested(saved))
-        eventPublisher.publishEvent(SupportMessageConfirmationEmailRequested(artist.email, artist.artistName))
-        eventPublisher.publishEvent(SupportMessageSubmittedEvent(artist.slug, saved.type, artist.email))
+        eventPublisher.publishEvent(SupportMessageSubmittedEvent(saved))
     }
 }

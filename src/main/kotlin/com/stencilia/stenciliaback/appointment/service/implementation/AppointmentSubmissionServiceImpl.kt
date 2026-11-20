@@ -1,11 +1,9 @@
 package com.stencilia.stenciliaback.appointment.service.implementation
 
-import com.stencilia.stenciliaback.alert.event.RequestValidatedEvent
 import com.stencilia.stenciliaback.appointment.dto.AppointmentFormRequestDto
-import com.stencilia.stenciliaback.appointment.event.AppointmentRequestConfirmationEmailRequested
 import com.stencilia.stenciliaback.appointment.event.AppointmentLinksRequested
-import com.stencilia.stenciliaback.appointment.event.AppointmentNotificationEmailRequested
-import com.stencilia.stenciliaback.appointment.event.AppointmentVerificationEmailRequested
+import com.stencilia.stenciliaback.appointment.event.AppointmentRequestSubmittedEvent
+import com.stencilia.stenciliaback.appointment.event.AppointmentRequestVerifiedEvent
 import com.stencilia.stenciliaback.appointment.exception.AppointmentNotFoundException
 import com.stencilia.stenciliaback.appointment.repository.AppointmentRepository
 import com.stencilia.stenciliaback.appointment.repository.ReferenceRepository
@@ -42,7 +40,7 @@ class AppointmentSubmissionServiceImpl(
         )
         val appointment = appointmentRepository.save(appointmentDto.toEntity(artist, client))
         referenceRepository.saveAll(appointmentDto.references.map { it.toEntity(appointment) })
-        eventPublisher.publishEvent(AppointmentVerificationEmailRequested(appointment))
+        eventPublisher.publishEvent(AppointmentRequestSubmittedEvent(appointment))
     }
 
     override fun uploadReference(
@@ -60,9 +58,7 @@ class AppointmentSubmissionServiceImpl(
         if (appointment.verifiedAt != null) return
         appointment.verifiedAt = Instant.now()
         appointmentRepository.save(appointment)
-        eventPublisher.publishEvent(AppointmentNotificationEmailRequested(appointment))
-        eventPublisher.publishEvent(AppointmentRequestConfirmationEmailRequested(appointment))
-        eventPublisher.publishEvent(RequestValidatedEvent(appointment.artist.slug, appointment.client.email))
+        eventPublisher.publishEvent(AppointmentRequestVerifiedEvent(appointment))
     }
 
     override fun requestLinks(slug: String, email: String) {

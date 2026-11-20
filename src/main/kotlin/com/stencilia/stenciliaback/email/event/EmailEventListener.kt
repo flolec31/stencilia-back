@@ -1,18 +1,16 @@
 package com.stencilia.stenciliaback.email.event
 
-import com.stencilia.stenciliaback.appointment.event.AppointmentRequestConfirmationEmailRequested
+import com.stencilia.stenciliaback.appointment.event.AppointmentRequestSubmittedEvent
 import com.stencilia.stenciliaback.appointment.event.AppointmentLinksRequested
-import com.stencilia.stenciliaback.appointment.event.AppointmentNotificationEmailRequested
-import com.stencilia.stenciliaback.appointment.event.AppointmentVerificationEmailRequested
-import com.stencilia.stenciliaback.auth.artist.event.ArtistVerificationEmailRequested
-import com.stencilia.stenciliaback.auth.artist.event.PasswordChangedEmailRequested
-import com.stencilia.stenciliaback.auth.artist.event.PasswordResetEmailRequested
+import com.stencilia.stenciliaback.appointment.event.AppointmentRequestVerifiedEvent
+import com.stencilia.stenciliaback.auth.artist.event.ArtistVerificationRequestedEvent
+import com.stencilia.stenciliaback.auth.artist.event.PasswordChangedEvent
+import com.stencilia.stenciliaback.auth.artist.event.PasswordResetRequestedEvent
 import com.stencilia.stenciliaback.auth.client.event.ClientAccessCodeRequested
-import com.stencilia.stenciliaback.discussion.event.NewMessageEmailRequested
-import com.stencilia.stenciliaback.discussion.event.NewMessageToArtistEmailRequested
+import com.stencilia.stenciliaback.discussion.event.ArtistMessagePostedEvent
+import com.stencilia.stenciliaback.discussion.event.ClientMessagePostedEvent
 import com.stencilia.stenciliaback.email.service.EmailService
-import com.stencilia.stenciliaback.support.event.SupportMessageConfirmationEmailRequested
-import com.stencilia.stenciliaback.support.event.SupportMessageReceivedEmailRequested
+import com.stencilia.stenciliaback.support.event.SupportMessageSubmittedEvent
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
@@ -23,32 +21,28 @@ class EmailEventListener(
 ) {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: ArtistVerificationEmailRequested) {
+    fun on(event: ArtistVerificationRequestedEvent) {
         emailService.sendArtistVerificationEmail(event.to, event.artistName, event.token)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: PasswordResetEmailRequested) {
+    fun on(event: PasswordResetRequestedEvent) {
         emailService.sendPasswordResetEmail(event.to, event.artistName, event.token)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: PasswordChangedEmailRequested) {
+    fun on(event: PasswordChangedEvent) {
         emailService.sendPasswordChangedEmail(event.to, event.artistName)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: AppointmentVerificationEmailRequested) {
+    fun on(event: AppointmentRequestSubmittedEvent) {
         emailService.sendAppointmentVerificationEmail(event.appointment)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: AppointmentNotificationEmailRequested) {
+    fun on(event: AppointmentRequestVerifiedEvent) {
         emailService.sendAppointmentNotificationEmail(event.appointment)
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: AppointmentRequestConfirmationEmailRequested) {
         emailService.sendAppointmentRequestConfirmationEmail(event.appointment)
     }
 
@@ -58,23 +52,22 @@ class EmailEventListener(
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: NewMessageEmailRequested) {
+    fun on(event: ArtistMessagePostedEvent) {
         emailService.sendNewMessageEmailToClient(event.appointment)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: NewMessageToArtistEmailRequested) {
+    fun on(event: ClientMessagePostedEvent) {
         emailService.sendNewMessageEmailToArtist(event.appointment)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: SupportMessageReceivedEmailRequested) {
+    fun on(event: SupportMessageSubmittedEvent) {
         emailService.sendSupportMessageReceivedEmail(event.supportMessage)
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun on(event: SupportMessageConfirmationEmailRequested) {
-        emailService.sendSupportMessageConfirmationEmail(event.to, event.artistName)
+        emailService.sendSupportMessageConfirmationEmail(
+            event.supportMessage.artist.email,
+            event.supportMessage.artist.artistName,
+        )
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
