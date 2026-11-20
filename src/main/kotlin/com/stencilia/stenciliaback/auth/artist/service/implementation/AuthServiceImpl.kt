@@ -2,6 +2,7 @@ package com.stencilia.stenciliaback.auth.artist.service.implementation
 
 import com.stencilia.stenciliaback.artist.exception.SlugAlreadyTakenException
 import com.stencilia.stenciliaback.artist.exception.TattooArtistAlreadyExistsException
+import com.stencilia.stenciliaback.alert.event.ArtistVerifiedEvent
 import com.stencilia.stenciliaback.artist.service.TattooArtistService
 import com.stencilia.stenciliaback.auth.artist.dto.ChangePasswordRequestDto
 import com.stencilia.stenciliaback.auth.dto.LoginResponseDto
@@ -80,6 +81,8 @@ class AuthServiceImpl(
         }
         tattooArtistService.activate(verificationToken.tattooArtistId)
         tokenRepository.delete(verificationToken)
+        val artist = tattooArtistService.findById(verificationToken.tattooArtistId)
+        eventPublisher.publishEvent(ArtistVerifiedEvent(artist.slug, artist.email))
         return refreshTokenService.issue(verificationToken.tattooArtistId, Role.ARTIST)
     }
 
