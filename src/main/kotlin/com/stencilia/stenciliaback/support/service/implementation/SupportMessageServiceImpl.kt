@@ -1,5 +1,6 @@
 package com.stencilia.stenciliaback.support.service.implementation
 
+import com.stencilia.stenciliaback.alert.event.SupportMessageSubmittedEvent
 import com.stencilia.stenciliaback.artist.service.TattooArtistService
 import com.stencilia.stenciliaback.storage.dto.ImageUploadResponseDto
 import com.stencilia.stenciliaback.storage.service.ImageUploadService
@@ -32,5 +33,6 @@ class SupportMessageServiceImpl(
         val saved = supportMessageRepository.save(request.toEntity(artist))
         eventPublisher.publishEvent(SupportMessageReceivedEmailRequested(saved))
         eventPublisher.publishEvent(SupportMessageConfirmationEmailRequested(artist.email, artist.artistName))
+        eventPublisher.publishEvent(SupportMessageSubmittedEvent(artist.slug, saved.type, artist.email))
     }
 }

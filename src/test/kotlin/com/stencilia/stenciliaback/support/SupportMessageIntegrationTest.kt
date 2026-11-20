@@ -1,6 +1,9 @@
 package com.stencilia.stenciliaback.support
 
 import com.stencilia.stenciliaback.AbstractIntegrationTest
+import com.stencilia.stenciliaback.alert.entity.TestAccount
+import com.stencilia.stenciliaback.alert.repository.TestAccountRepository
+import com.stencilia.stenciliaback.alert.service.AdminAlertService
 import com.stencilia.stenciliaback.artist.entity.TattooArtist
 import com.stencilia.stenciliaback.artist.repository.TattooArtistRepository
 import com.stencilia.stenciliaback.auth.Role
@@ -11,7 +14,9 @@ import com.stencilia.stenciliaback.support.repository.SupportMessageRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -32,12 +37,15 @@ class SupportMessageIntegrationTest : AbstractIntegrationTest() {
     @Autowired lateinit var jwtService: JwtService
     @Autowired lateinit var artistRepository: TattooArtistRepository
     @Autowired lateinit var supportMessageRepository: SupportMessageRepository
+    @Autowired lateinit var testAccountRepository: TestAccountRepository
     @MockitoBean lateinit var emailService: EmailService
+    @MockitoBean lateinit var adminAlertService: AdminAlertService
 
     @AfterEach
     fun cleanup() {
         supportMessageRepository.deleteAll()
         artistRepository.deleteAll()
+        testAccountRepository.deleteAll()
     }
 
     private fun createActivatedArtist(): TattooArtist =
@@ -122,6 +130,37 @@ class SupportMessageIntegrationTest : AbstractIntegrationTest() {
         assertThat(saved.createdAt).isNotNull()
         verify(emailService).sendSupportMessageReceivedEmail(argThat { id == saved.id })
         verify(emailService).sendSupportMessageConfirmationEmail("artist@test.com", "Test Artist")
+    }
+
+    @Test
+    fun `sending a support message sends admin alert with slug and type`() {
+        val artist = createActivatedArtist()
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+
+        mockMvc.perform(
+            post("/support")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer $token")
+                .content(objectMapper.writeValueAsString(messageBody(type = "BUG")))
+        ).andExpect(status().isNoContent)
+
+        verify(adminAlertService).send("🛟 Support (BUG) — test-artist")
+    }
+
+    @Test
+    fun `test-account artist sends no support alert`() {
+        val artist = createActivatedArtist()
+        testAccountRepository.save(TestAccount("artist@test.com"))
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+
+        mockMvc.perform(
+            post("/support")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer $token")
+                .content(objectMapper.writeValueAsString(messageBody(type = "BUG")))
+        ).andExpect(status().isNoContent)
+
+        verify(adminAlertService, never()).send(any())
     }
 
     @Test
