@@ -1,5 +1,6 @@
 package com.stencilia.stenciliaback.appointment.service.implementation
 
+import com.stencilia.stenciliaback.alert.event.RequestValidatedEvent
 import com.stencilia.stenciliaback.appointment.dto.AppointmentFormRequestDto
 import com.stencilia.stenciliaback.appointment.event.AppointmentRequestConfirmationEmailRequested
 import com.stencilia.stenciliaback.appointment.event.AppointmentLinksRequested
@@ -61,6 +62,7 @@ class AppointmentSubmissionServiceImpl(
         appointmentRepository.save(appointment)
         eventPublisher.publishEvent(AppointmentNotificationEmailRequested(appointment))
         eventPublisher.publishEvent(AppointmentRequestConfirmationEmailRequested(appointment))
+        eventPublisher.publishEvent(RequestValidatedEvent(appointment.artist.slug, appointment.client.email))
     }
 
     override fun requestLinks(slug: String, email: String) {
