@@ -345,6 +345,18 @@ class AppointmentSubmissionIntegrationTest : AbstractAppointmentIntegrationTest(
     }
 
     @Test
+    fun `test-account artist email sends no alert on validation`() {
+        val artist = createActivatedArtist()
+        val form = createAppointment(artist, createClient(email = "client@test.com"), verifiedAt = null)
+        testAccountRepository.save(TestAccount(artist.email))
+
+        mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+            .andExpect(status().isNoContent)
+
+        verify(adminAlertService, never()).send(any())
+    }
+
+    @Test
     fun `admin alert failure does not break request validation`() {
         whenever(adminAlertService.send(any())).thenThrow(RuntimeException("boom"))
         val artist = createActivatedArtist()

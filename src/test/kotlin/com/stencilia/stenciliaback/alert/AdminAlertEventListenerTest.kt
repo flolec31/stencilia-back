@@ -77,6 +77,27 @@ class AdminAlertEventListenerTest {
         assertDoesNotThrow { listener.on(ArtistVerifiedEvent("jane-ink", "jane@x.com")) }
     }
 
+    @Test
+    fun `listener swallows a test-account lookup failure`() {
+        whenever(testAccountRepository.existsByEmailIgnoreCase(any())).thenThrow(RuntimeException("db down"))
+
+        assertDoesNotThrow { listener.on(ArtistVerifiedEvent("jane-ink", "jane@x.com")) }
+    }
+
+    @Test
+    fun `appointment request with a test-account artist sends no alert even when the client is real`() {
+        whenever(testAccountRepository.existsByEmailIgnoreCase("client@x.com")).thenReturn(false)
+        whenever(testAccountRepository.existsByEmailIgnoreCase("artist-test@x.com")).thenReturn(true)
+
+        listener.on(
+            AppointmentRequestVerifiedEvent(
+                appointment(slug = "jane-ink", clientEmail = "client@x.com", artistEmail = "artist-test@x.com")
+            )
+        )
+
+        verifyNoInteractions(alertService)
+    }
+
     private fun artist(slug: String, email: String) = TattooArtist(
         id = UUID.randomUUID(),
         email = email,
@@ -89,8 +110,8 @@ class AdminAlertEventListenerTest {
         activatedAt = Instant.now(),
     )
 
-    private fun appointment(slug: String, clientEmail: String) = Appointment(
-        artist = artist(slug, "artist@x.com"),
+    private fun appointment(slug: String, clientEmail: String, artistEmail: String = "artist@x.com") = Appointment(
+        artist = artist(slug, artistEmail),
         client = TattooClient(email = clientEmail, firstName = "Jane", lastName = "Doe"),
         tattooDescription = "A dragon",
         tattooPlacement = "forearm",
