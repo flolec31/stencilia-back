@@ -305,7 +305,7 @@ class AppointmentSubmissionIntegrationTest : AbstractAppointmentIntegrationTest(
         mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
             .andExpect(status().isNoContent)
 
-        verify(adminAlertService).send("📋 New tattoo request — ${artist.slug}")
+        verify(adminAlertService).send("📋 New tattoo request sent to ${artist.slug}")
     }
 
     @Test
@@ -329,7 +329,7 @@ class AppointmentSubmissionIntegrationTest : AbstractAppointmentIntegrationTest(
         mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
             .andExpect(status().isNoContent)
 
-        verify(adminAlertService).send("📋 New tattoo request — ${artist.slug}")
+        verify(adminAlertService).send("📋 New tattoo request sent to ${artist.slug}")
     }
 
     @Test

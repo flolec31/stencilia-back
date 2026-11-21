@@ -278,7 +278,7 @@ class AuthIntegrationTest : AbstractIntegrationTest() {
         mockMvc.perform(get("/auth/artist/verify").param("token", token))
             .andExpect(status().isOk)
 
-        verify(adminAlertService).send("🎨 New artist signed up — john-doe")
+        verify(adminAlertService).send("🎨 New artist signed up: john-doe")
     }
 
     @Test

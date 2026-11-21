@@ -34,7 +34,7 @@ class AdminAlertEventListenerTest {
 
         listener.on(ArtistVerifiedEvent("jane-ink", "jane@x.com"))
 
-        verify(alertService).send("🎨 New artist signed up — jane-ink")
+        verify(alertService).send("🎨 New artist signed up: jane-ink")
     }
 
     @Test
@@ -43,7 +43,7 @@ class AdminAlertEventListenerTest {
 
         listener.on(AppointmentRequestVerifiedEvent(appointment(slug = "jane-ink", clientEmail = "c@x.com")))
 
-        verify(alertService).send("📋 New tattoo request — jane-ink")
+        verify(alertService).send("📋 New tattoo request sent to jane-ink")
     }
 
     @Test
@@ -52,7 +52,7 @@ class AdminAlertEventListenerTest {
 
         listener.on(SupportMessageSubmittedEvent(supportMessage(slug = "jane-ink", type = SupportMessageType.BUG)))
 
-        verify(alertService).send("🛟 Support (BUG) — jane-ink")
+        verify(alertService).send("🛟 Support (BUG) from jane-ink")
     }
 
     @Test

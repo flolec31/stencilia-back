@@ -144,7 +144,7 @@ class SupportMessageIntegrationTest : AbstractIntegrationTest() {
                 .content(objectMapper.writeValueAsString(messageBody(type = "BUG")))
         ).andExpect(status().isNoContent)
 
-        verify(adminAlertService).send("🛟 Support (BUG) — test-artist")
+        verify(adminAlertService).send("🛟 Support (BUG) from test-artist")
     }
 
     @Test

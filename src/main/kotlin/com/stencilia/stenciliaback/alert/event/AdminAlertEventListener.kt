@@ -20,7 +20,7 @@ class AdminAlertEventListener(
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun on(event: ArtistVerifiedEvent) {
-        alert(listOf(event.email), "🎨 New artist signed up — ${event.slug}")
+        alert(listOf(event.email), "🎨 New artist signed up: ${event.slug}")
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -29,14 +29,14 @@ class AdminAlertEventListener(
         // BR-5: a test-account artist OR client suppresses the alert.
         alert(
             listOf(appointment.client.email, appointment.artist.email),
-            "📋 New tattoo request — ${appointment.artist.slug}",
+            "📋 New tattoo request sent to ${appointment.artist.slug}",
         )
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun on(event: SupportMessageSubmittedEvent) {
         val message = event.supportMessage
-        alert(listOf(message.artist.email), "🛟 Support (${message.type}) — ${message.artist.slug}")
+        alert(listOf(message.artist.email), "🛟 Support (${message.type}) from ${message.artist.slug}")
     }
 
     // Everything is wrapped so neither the test-account lookup nor the send can break the
