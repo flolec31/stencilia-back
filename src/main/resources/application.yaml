@@ -31,6 +31,19 @@ app:
     access-key: ${APP_STORAGE_ACCESS_KEY:}
     secret-key: ${APP_STORAGE_SECRET_KEY:}
     region: ${APP_STORAGE_REGION:auto}
+  metrics:
+    username: ${APP_METRICS_USERNAME:}
+    password: ${APP_METRICS_PASSWORD:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 springdoc:
   api-docs:
