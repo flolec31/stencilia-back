@@ -7,6 +7,16 @@ spring:
 resend:
   api-key: dummy
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 app:
   base-url: http://localhost
   jwt:

@@ -1,6 +1,7 @@
 package com.stencilia.stenciliaback.security
 
 import com.stencilia.stenciliaback.auth.Role
+import com.stencilia.stenciliaback.metrics.config.MetricsProperties
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.JWKSet
 import com.nimbusds.jose.jwk.OctetSequenceKey
@@ -8,13 +9,16 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.userdetails.User
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
@@ -29,7 +33,7 @@ import javax.crypto.spec.SecretKeySpec
 
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(JwtConfig::class, CorsConfig::class)
+@EnableConfigurationProperties(JwtConfig::class, CorsConfig::class, MetricsProperties::class)
 class SecurityConfig(
     private val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint,
     private val corsConfig: CorsConfig,
@@ -45,6 +49,34 @@ class SecurityConfig(
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", config)
         return source
+    }
+
+    // Registered before the JWT chain (first-match-wins) so /actuator/prometheus is guarded by a
+    // basic-auth scrape credential, not the JWT resource server. Blank credential → no user → locked.
+    @Bean
+    @Order(1)
+    fun prometheusSecurityFilterChain(
+        http: HttpSecurity,
+        passwordEncoder: PasswordEncoder,
+        metricsProperties: MetricsProperties,
+    ): SecurityFilterChain {
+        val users = InMemoryUserDetailsManager()
+        if (metricsProperties.username.isNotBlank() && metricsProperties.password.isNotBlank()) {
+            users.createUser(
+                User.withUsername(metricsProperties.username)
+                    .password(passwordEncoder.encode(metricsProperties.password))
+                    .roles("METRICS")
+                    .build()
+            )
+        }
+        return http
+            .securityMatcher("/actuator/prometheus")
+            .csrf { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .authorizeHttpRequests { it.anyRequest().authenticated() }
+            .httpBasic { }
+            .userDetailsService(users)
+            .build()
     }
 
     @Bean

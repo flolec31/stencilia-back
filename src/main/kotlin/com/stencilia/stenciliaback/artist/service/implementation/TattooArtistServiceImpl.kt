@@ -8,6 +8,7 @@ import com.stencilia.stenciliaback.artist.exception.TattooArtistNotFoundExceptio
 import com.stencilia.stenciliaback.artist.model.RegisterRequestModel
 import com.stencilia.stenciliaback.artist.repository.TattooArtistRepository
 import com.stencilia.stenciliaback.artist.service.TattooArtistService
+import com.stencilia.stenciliaback.metrics.service.PageVisitService
 import com.stencilia.stenciliaback.storage.ImageValidator
 import com.stencilia.stenciliaback.storage.service.StorageService
 import org.slf4j.LoggerFactory
@@ -23,6 +24,7 @@ class TattooArtistServiceImpl(
     private val repository: TattooArtistRepository,
     private val storageService: StorageService,
     private val imageValidator: ImageValidator,
+    private val pageVisitService: PageVisitService,
 ) : TattooArtistService {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -87,6 +89,8 @@ class TattooArtistServiceImpl(
     override fun getProfileBySlug(slug: String): ProfileResponseDto {
         val artist = repository.findBySlugAndActivatedAtIsNotNull(slug)
             .orElseThrow { TattooArtistNotFoundException() }
+        // A failing visit count must not break the public page load.
+        runCatching { pageVisitService.recordVisit(artist.id) }
         val profilePhotoUrl = artist.profilePhotoKey?.let { storageService.getSignedUrl(it) }
         return ProfileResponseDto(artist, profilePhotoUrl)
     }
