@@ -35,7 +35,7 @@ class BreakAlertIntegrationTest : AbstractIntegrationTest() {
 
         mockMvc.perform(get("/artists/jane-ink")).andExpect(status().isInternalServerError)
 
-        verify(adminAlertService).send("💥 500 GET /artists/jane-ink — RuntimeException")
+        verify(adminAlertService).send("💥 500 on GET /artists/jane-ink: RuntimeException")
     }
 
     @Test
@@ -45,7 +45,7 @@ class BreakAlertIntegrationTest : AbstractIntegrationTest() {
 
         mockMvc.perform(get("/artists/jane-ink")).andExpect(status().isInternalServerError)
 
-        verify(adminAlertService).send("💥 500 GET /artists/jane-ink — ImageUploadFailedException")
+        verify(adminAlertService).send("💥 500 on GET /artists/jane-ink: ImageUploadFailedException")
     }
 
     @Test

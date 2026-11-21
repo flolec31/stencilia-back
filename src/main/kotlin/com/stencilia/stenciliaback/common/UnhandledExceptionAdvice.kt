@@ -28,7 +28,7 @@ class UnhandledExceptionAdvice(
     @ExceptionHandler(Exception::class)
     fun handleUnhandled(e: Exception, request: HttpServletRequest): ResponseEntity<Map<String, String?>> {
         // Endpoint = method + path only (no query string — it may carry a token); error type = the exception class.
-        adminAlertService.send("💥 500 ${request.method} ${request.requestURI} — ${e.javaClass.simpleName}")
+        adminAlertService.send("💥 500 on ${request.method} ${request.requestURI}: ${e.javaClass.simpleName}")
         logger.warn("⚠ Unhandled server exception ⚠", e)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Internal server error"))
     }

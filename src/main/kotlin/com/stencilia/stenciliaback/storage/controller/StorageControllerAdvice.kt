@@ -19,6 +19,4 @@ class StorageControllerAdvice : AbstractControllerAdvice() {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleImageTooLarge(e: ImageTooLargeException) = handleException(e)
 
-    // ImageUploadFailedException is a genuine server error with no dedicated handling: it falls
-    // through to the catch-all, which returns 500 and alerts the admin with the endpoint.
 }

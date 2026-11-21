@@ -23,6 +23,6 @@ class UnhandledExceptionAdviceTest {
         val response = advice.handleUnhandled(RuntimeException("boom"), request)
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
-        verify(adminAlertService).send("💥 500 GET /artists/jane-ink — RuntimeException")
+        verify(adminAlertService).send("💥 500 on GET /artists/jane-ink: RuntimeException")
     }
 }
