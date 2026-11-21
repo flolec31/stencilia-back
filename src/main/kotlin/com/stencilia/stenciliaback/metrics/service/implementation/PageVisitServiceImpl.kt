@@ -6,7 +6,6 @@ import com.stencilia.stenciliaback.metrics.service.PageVisitService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 @Service
 class PageVisitServiceImpl(
@@ -18,10 +17,9 @@ class PageVisitServiceImpl(
 
     // Own read-write transaction — the public profile read is read-only.
     @Transactional
-    override fun recordVisit(slug: String, viewerArtistId: UUID?) {
+    override fun recordVisit(slug: String) {
         try {
             val artist = artistRepository.findBySlugAndActivatedAtIsNotNull(slug).orElse(null) ?: return
-            if (artist.id == viewerArtistId) return
             pageVisitCountRepository.increment(artist.id)
         } catch (e: Exception) {
             logger.warn("Failed to record page visit for slug {}", slug, e)

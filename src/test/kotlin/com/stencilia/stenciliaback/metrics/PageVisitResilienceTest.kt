@@ -37,7 +37,7 @@ class PageVisitResilienceTest : AbstractIntegrationTest() {
                 registeredAt = Instant.now(), activatedAt = Instant.now(),
             )
         )
-        whenever(pageVisitService.recordVisit(any(), any())).thenThrow(RuntimeException("boom"))
+        whenever(pageVisitService.recordVisit(any())).thenThrow(RuntimeException("boom"))
 
         mockMvc.perform(get("/artists/ink")).andExpect(status().isOk)
     }

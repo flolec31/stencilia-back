@@ -11,7 +11,6 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
@@ -56,17 +55,8 @@ class TattooArtistController(
     fun getPublicProfile(@PathVariable slug: String): ProfileResponseDto {
         val profile = tattooArtistService.getProfileBySlug(slug)
         // A failing visit count must not break the public page load.
-        runCatching { pageVisitService.recordVisit(slug, currentArtistId()) }
+        runCatching { pageVisitService.recordVisit(slug) }
         return profile
-    }
-
-    private fun currentArtistId(): UUID? {
-        val authentication = SecurityContextHolder.getContext().authentication
-        return if (authentication is JwtAuthenticationToken) {
-            runCatching { UUID.fromString(authentication.token.subject) }.getOrNull()
-        } else {
-            null
-        }
     }
 
     @DeleteMapping("/me/photo")

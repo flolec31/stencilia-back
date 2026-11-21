@@ -58,25 +58,16 @@ class PageVisitCounterTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `artist viewing their own page is not counted`() {
+    fun `an authenticated artist visiting the public slug still increments`() {
         val artist = saveArtist("ink")
         mockMvc.perform(get("/artists/ink")).andExpect(status().isOk)
 
+        // The backend counts every hit to the public slug URL; identity isn't inspected (the FE does
+        // not send the JWT here, and an artist's own "my page" will use an authed path — front #11).
         val ownToken = jwtService.generateAccessToken(artist.id, Role.ARTIST)
         mockMvc.perform(get("/artists/ink").header("Authorization", "Bearer $ownToken")).andExpect(status().isOk)
 
-        assertEquals(1, countFor(artist.id))
-    }
-
-    @Test
-    fun `a different artist viewing the page is counted`() {
-        val owner = saveArtist("ink")
-        val other = saveArtist("other")
-
-        val otherToken = jwtService.generateAccessToken(other.id, Role.ARTIST)
-        mockMvc.perform(get("/artists/ink").header("Authorization", "Bearer $otherToken")).andExpect(status().isOk)
-
-        assertEquals(1, countFor(owner.id))
+        assertEquals(2, countFor(artist.id))
     }
 
     @Test
@@ -97,7 +88,7 @@ class PageVisitCounterTest : AbstractIntegrationTest() {
         repeat(threads) {
             pool.submit {
                 start.await()
-                pageVisitService.recordVisit("ink", null)
+                pageVisitService.recordVisit("ink")
                 done.countDown()
             }
         }
