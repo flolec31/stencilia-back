@@ -6,7 +6,6 @@ import com.stencilia.stenciliaback.artist.dto.SlugAvailabilityResponseDto
 import com.stencilia.stenciliaback.artist.dto.UpdateProfileRequestDto
 import com.stencilia.stenciliaback.artist.exception.SlugAlreadyTakenException
 import com.stencilia.stenciliaback.artist.service.TattooArtistService
-import com.stencilia.stenciliaback.metrics.service.PageVisitService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
 import org.springframework.http.HttpStatus
@@ -21,8 +20,7 @@ import java.util.*
 @RequestMapping("/artists")
 @Validated
 class TattooArtistController(
-    private val tattooArtistService: TattooArtistService,
-    private val pageVisitService: PageVisitService,
+    private val tattooArtistService: TattooArtistService
 ) {
 
     @GetMapping("/slug-available")
@@ -52,12 +50,8 @@ class TattooArtistController(
     }
 
     @GetMapping("/{slug}")
-    fun getPublicProfile(@PathVariable slug: String): ProfileResponseDto {
-        val profile = tattooArtistService.getProfileBySlug(slug)
-        // A failing visit count must not break the public page load.
-        runCatching { pageVisitService.recordVisit(slug) }
-        return profile
-    }
+    fun getPublicProfile(@PathVariable slug: String): ProfileResponseDto =
+        tattooArtistService.getProfileBySlug(slug)
 
     @DeleteMapping("/me/photo")
     @ResponseStatus(HttpStatus.NO_CONTENT)

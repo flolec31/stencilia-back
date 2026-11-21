@@ -125,9 +125,9 @@ class MetricsGaugeTest : AbstractIntegrationTest() {
 
     @Test
     fun `visits total reflects the page-visit counter`() {
-        artist("ink")
-        pageVisitService.recordVisit("ink")
-        pageVisitService.recordVisit("ink")
+        val a = artist("ink")
+        pageVisitService.recordVisit(a.id)
+        pageVisitService.recordVisit(a.id)
         assertEquals(2.0, gauge("stencilia_visits"))
     }
 
@@ -145,7 +145,7 @@ class MetricsGaugeTest : AbstractIntegrationTest() {
     fun `excluded accounts leave every metric unchanged`() {
         val a = artist("ink", "ink@test.com")
         appointment(a, client("real@test.com"), verifiedAt = Instant.now())
-        pageVisitService.recordVisit("ink")
+        pageVisitService.recordVisit(a.id)
         testAccountRepository.save(TestAccount(email = "ink@test.com"))
 
         assertEquals(0.0, gauge("stencilia_artists_registered"))

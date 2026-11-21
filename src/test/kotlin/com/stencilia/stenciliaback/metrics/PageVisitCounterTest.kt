@@ -88,7 +88,7 @@ class PageVisitCounterTest : AbstractIntegrationTest() {
         repeat(threads) {
             pool.submit {
                 start.await()
-                pageVisitService.recordVisit("ink")
+                pageVisitService.recordVisit(artist.id)
                 done.countDown()
             }
         }
