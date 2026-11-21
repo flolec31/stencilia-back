@@ -9,20 +9,18 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * Hosts the on-demand metric count queries. Bound to [TattooArtist] only to satisfy Spring Data;
- * each JPQL query names its own target entity. Every count excludes `test_account` emails (BR-8).
+ * On-demand metric count queries. Bound to [TattooArtist] only to satisfy Spring Data; each query
+ * names its own target entity.
  */
 @Repository
 interface MetricsRepository : JpaRepository<TattooArtist, UUID> {
 
-    // BR-3a
     @Query(
         "SELECT COUNT(a) FROM TattooArtist a WHERE a.activatedAt IS NOT NULL " +
             "AND NOT EXISTS (SELECT 1 FROM TestAccount t WHERE LOWER(t.email) = LOWER(a.email))",
     )
     fun countRegisteredArtists(): Long
 
-    // BR-3b: validated AND client email differs from artist email (self-requests excluded)
     @Query(
         "SELECT COUNT(ap) FROM Appointment ap WHERE ap.verifiedAt IS NOT NULL " +
             "AND LOWER(ap.client.email) <> LOWER(ap.artist.email) " +
@@ -31,7 +29,6 @@ interface MetricsRepository : JpaRepository<TattooArtist, UUID> {
     )
     fun countCountedRequests(): Long
 
-    // BR-4: registered artists with >=1 counted request validated within the window
     @Query(
         "SELECT COUNT(DISTINCT ap.artist.id) FROM Appointment ap " +
             "WHERE ap.verifiedAt IS NOT NULL AND ap.verifiedAt >= :since " +
@@ -42,7 +39,6 @@ interface MetricsRepository : JpaRepository<TattooArtist, UUID> {
     )
     fun countActiveArtists(@Param("since") since: Instant): Long
 
-    // BR-5a
     @Query(
         "SELECT COUNT(ap) FROM Appointment ap " +
             "WHERE ap.verifiedAt IS NULL AND ap.submittedAt < :threshold " +
@@ -51,7 +47,7 @@ interface MetricsRepository : JpaRepository<TattooArtist, UUID> {
     )
     fun countLostUnvalidated(@Param("threshold") threshold: Instant): Long
 
-    // BR-5b: validated long ago and never opened by the artist. Native because `new` is a JPQL keyword.
+    // Native: `new` is a JPQL reserved keyword.
     @Query(
         value = "SELECT COUNT(*) FROM appointment ap " +
             "JOIN tattoo_artist a ON a.id = ap.artist_id " +
@@ -63,7 +59,6 @@ interface MetricsRepository : JpaRepository<TattooArtist, UUID> {
     )
     fun countLostUnopened(@Param("threshold") threshold: Instant): Long
 
-    // BR-6b: every submission
     @Query(
         "SELECT COUNT(ap) FROM Appointment ap " +
             "WHERE NOT EXISTS (SELECT 1 FROM TestAccount t " +
@@ -71,7 +66,6 @@ interface MetricsRepository : JpaRepository<TattooArtist, UUID> {
     )
     fun countSubmittedRequests(): Long
 
-    // BR-6c: validated (self-requests included)
     @Query(
         "SELECT COUNT(ap) FROM Appointment ap WHERE ap.verifiedAt IS NOT NULL " +
             "AND NOT EXISTS (SELECT 1 FROM TestAccount t " +

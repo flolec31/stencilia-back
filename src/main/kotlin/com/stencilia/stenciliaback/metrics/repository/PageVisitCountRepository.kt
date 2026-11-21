@@ -11,7 +11,7 @@ import java.util.UUID
 @Repository
 interface PageVisitCountRepository : JpaRepository<PageVisitCount, UUID> {
 
-    // Atomic upsert: no app-side read-modify-write, so concurrent visits can't lose an increment.
+    // Atomic upsert — avoids a lost-update race between concurrent visits.
     @Modifying
     @Query(
         value = "INSERT INTO page_visit_count(artist_id, count) VALUES (:artistId, 1) " +
@@ -20,8 +20,7 @@ interface PageVisitCountRepository : JpaRepository<PageVisitCount, UUID> {
     )
     fun increment(@Param("artistId") artistId: UUID)
 
-    // Native with an explicit bigint cast: Postgres SUM(bigint) yields numeric, which won't coerce
-    // to the Long return type.
+    // Native + bigint cast: Postgres SUM(bigint) returns numeric, which won't map to the Long return.
     @Query(
         value = "SELECT CAST(COALESCE(SUM(p.count), 0) AS bigint) FROM page_visit_count p " +
             "JOIN tattoo_artist a ON a.id = p.artist_id " +

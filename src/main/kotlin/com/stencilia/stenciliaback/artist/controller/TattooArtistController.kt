@@ -55,7 +55,7 @@ class TattooArtistController(
     @GetMapping("/{slug}")
     fun getPublicProfile(@PathVariable slug: String): ProfileResponseDto {
         val profile = tattooArtistService.getProfileBySlug(slug)
-        // Best-effort: counting a visit must never break the public page load.
+        // A failing visit count must not break the public page load.
         runCatching { pageVisitService.recordVisit(slug, currentArtistId()) }
         return profile
     }

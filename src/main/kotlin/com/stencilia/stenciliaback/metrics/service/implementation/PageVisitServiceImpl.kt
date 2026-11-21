@@ -16,8 +16,7 @@ class PageVisitServiceImpl(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    // Own read-write transaction (the public profile read is read-only); best-effort so a counter
-    // failure never surfaces to the visitor.
+    // Own read-write transaction — the public profile read is read-only.
     @Transactional
     override fun recordVisit(slug: String, viewerArtistId: UUID?) {
         try {

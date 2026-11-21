@@ -10,9 +10,8 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 /**
- * Registers the admin on-demand metrics (product #6) as Micrometer gauges. Each gauge's supplier
- * runs its SQL at scrape time, so values are live to the scrape interval. A query failure yields
- * NaN rather than propagating, so a DB blip never 500s the scrape.
+ * Registers the admin on-demand metrics as Micrometer gauges backed by SQL read at scrape time.
+ * A query failure yields NaN instead of propagating, so a DB blip can't 500 the scrape.
  */
 @Component
 class MetricsRegistrar(
@@ -34,8 +33,7 @@ class MetricsRegistrar(
         gauge("stencilia.requests.lost.unopened") {
             metricsRepository.countLostUnopened(Instant.now().minus(7, ChronoUnit.DAYS))
         }
-        // Named `stencilia.visits` (not `.total`): Micrometer strips the `_total` suffix from gauges,
-        // since Prometheus reserves it for counters.
+        // Not `.total`: Micrometer strips the `_total` suffix from gauges (reserved for counters).
         gauge("stencilia.visits") { pageVisitCountRepository.sumVisitsExcludingTestAccounts() }
         gauge("stencilia.requests.submitted") { metricsRepository.countSubmittedRequests() }
         gauge("stencilia.requests.validated") { metricsRepository.countValidatedRequests() }
