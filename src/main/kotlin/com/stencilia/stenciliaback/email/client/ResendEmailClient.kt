@@ -1,5 +1,6 @@
 package com.stencilia.stenciliaback.email.client
 
+import com.stencilia.stenciliaback.alert.service.AdminAlertService
 import com.stencilia.stenciliaback.email.exception.EmailDeliveryException
 import com.resend.Resend
 import com.resend.services.emails.model.CreateEmailOptions
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component
 class ResendEmailClient(
     private val resend: Resend,
     @Value($$"${app.email.from}") private val from: String,
+    private val adminAlertService: AdminAlertService,
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -31,7 +33,8 @@ class ResendEmailClient(
         try {
             resend.emails().send(request)
         } catch (e: Exception) {
-            logger.error("Failed to send verification email to {}", to, e)
+            logger.error("Failed to send email (template {}) to {}", templateId, to, e)
+            adminAlertService.send("✉️ Email failed to send: $templateId")
             throw EmailDeliveryException("Failed to send verification email to $to: ${e.message}")
         }
     }
