@@ -9,9 +9,10 @@ import com.stencilia.stenciliaback.auth.artist.dto.RegisterRequestDto
 import com.stencilia.stenciliaback.auth.artist.dto.ResetPasswordRequestDto
 import com.stencilia.stenciliaback.auth.artist.entity.PasswordResetToken
 import com.stencilia.stenciliaback.auth.artist.entity.VerificationToken
-import com.stencilia.stenciliaback.auth.artist.event.ArtistVerificationEmailRequested
-import com.stencilia.stenciliaback.auth.artist.event.PasswordChangedEmailRequested
-import com.stencilia.stenciliaback.auth.artist.event.PasswordResetEmailRequested
+import com.stencilia.stenciliaback.auth.artist.event.ArtistVerificationRequestedEvent
+import com.stencilia.stenciliaback.auth.artist.event.ArtistVerifiedEvent
+import com.stencilia.stenciliaback.auth.artist.event.PasswordChangedEvent
+import com.stencilia.stenciliaback.auth.artist.event.PasswordResetRequestedEvent
 import com.stencilia.stenciliaback.auth.exception.*
 import com.stencilia.stenciliaback.auth.artist.exception.*
 import com.stencilia.stenciliaback.auth.artist.repository.PasswordResetTokenRepository
@@ -58,7 +59,7 @@ class AuthServiceImpl(
         }
         val verificationToken = VerificationToken(tattooArtistId = artistId)
         val token = tokenRepository.save(verificationToken).token
-        eventPublisher.publishEvent(ArtistVerificationEmailRequested(request.email, request.artistName, token))
+        eventPublisher.publishEvent(ArtistVerificationRequestedEvent(request.email, request.artistName, token))
     }
 
     override fun resendVerification(email: String) {
@@ -67,7 +68,7 @@ class AuthServiceImpl(
         val verificationToken = VerificationToken(tattooArtistId = artist.id)
         val token = tokenRepository.save(verificationToken).token
         logger.debug("Verification token updated for tattoo artist {}", email)
-        eventPublisher.publishEvent(ArtistVerificationEmailRequested(email, artist.artistName, token))
+        eventPublisher.publishEvent(ArtistVerificationRequestedEvent(email, artist.artistName, token))
     }
 
     // noRollbackFor: TokenExpiredException must not roll back the transaction so the deletion below persists.
@@ -80,6 +81,8 @@ class AuthServiceImpl(
         }
         tattooArtistService.activate(verificationToken.tattooArtistId)
         tokenRepository.delete(verificationToken)
+        val artist = tattooArtistService.findById(verificationToken.tattooArtistId)
+        eventPublisher.publishEvent(ArtistVerifiedEvent(artist.slug, artist.email))
         return refreshTokenService.issue(verificationToken.tattooArtistId, Role.ARTIST)
     }
 
@@ -101,7 +104,7 @@ class AuthServiceImpl(
         passwordResetTokenRepository.findByTattooArtistId(artist.id)?.let { passwordResetTokenRepository.delete(it) }
         val resetToken = PasswordResetToken(tattooArtistId = artist.id)
         val token = passwordResetTokenRepository.save(resetToken).token
-        eventPublisher.publishEvent(PasswordResetEmailRequested(artist.email, artist.artistName, token))
+        eventPublisher.publishEvent(PasswordResetRequestedEvent(artist.email, artist.artistName, token))
     }
 
     override fun changePassword(artistId: UUID, request: ChangePasswordRequestDto): LoginResponseDto {
@@ -110,7 +113,7 @@ class AuthServiceImpl(
         val encodedNewPassword = passwordEncoder.encode(request.newPassword)!!
         tattooArtistService.updatePassword(artistId, encodedNewPassword)
         refreshTokenService.revokeAll(artistId, Role.ARTIST)
-        eventPublisher.publishEvent(PasswordChangedEmailRequested(artist.email, artist.artistName))
+        eventPublisher.publishEvent(PasswordChangedEvent(artist.email, artist.artistName))
         return refreshTokenService.issue(artistId, Role.ARTIST)
     }
 
@@ -128,7 +131,7 @@ class AuthServiceImpl(
         val artist = tattooArtistService.findById(resetToken.tattooArtistId)
         tattooArtistService.updatePassword(resetToken.tattooArtistId, encodedNewPassword)
         refreshTokenService.revokeAll(resetToken.tattooArtistId, Role.ARTIST)
-        eventPublisher.publishEvent(PasswordChangedEmailRequested(artist.email, artist.artistName))
+        eventPublisher.publishEvent(PasswordChangedEvent(artist.email, artist.artistName))
         return refreshTokenService.issue(resetToken.tattooArtistId, Role.ARTIST)
     }
 }

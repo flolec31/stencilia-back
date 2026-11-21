@@ -6,8 +6,7 @@ import com.stencilia.stenciliaback.storage.dto.ImageUploadResponseDto
 import com.stencilia.stenciliaback.storage.service.ImageUploadService
 import com.stencilia.stenciliaback.support.dto.SupportMessageRequestDto
 import com.stencilia.stenciliaback.support.entity.SupportMessageType
-import com.stencilia.stenciliaback.support.event.SupportMessageConfirmationEmailRequested
-import com.stencilia.stenciliaback.support.event.SupportMessageReceivedEmailRequested
+import com.stencilia.stenciliaback.support.event.SupportMessageSubmittedEvent
 import com.stencilia.stenciliaback.support.repository.SupportMessageRepository
 import com.stencilia.stenciliaback.support.service.implementation.SupportMessageServiceImpl
 import org.assertj.core.api.Assertions.assertThat
@@ -71,7 +70,7 @@ class SupportMessageServiceImplTest {
     }
 
     @Test
-    fun `submit saves a message without a screenshot and publishes notification and confirmation events`() {
+    fun `submit saves a message and publishes a SupportMessageSubmitted fact event`() {
         `when`(tattooArtistService.findById(artistId)).thenReturn(artist)
         `when`(supportMessageRepository.save(savedCaptor.capture())).thenAnswer { savedCaptor.value }
         val request = SupportMessageRequestDto(type = SupportMessageType.HELP, message = "How do I change my slug?")
@@ -85,12 +84,9 @@ class SupportMessageServiceImplTest {
         assertThat(saved.screenshotKey).isNull()
         assertThat(saved.createdAt).isNotNull()
 
-        verify(eventPublisher, org.mockito.Mockito.times(2)).publishEvent(eventCaptor.capture())
-        val receivedEvent = eventCaptor.allValues.filterIsInstance<SupportMessageReceivedEmailRequested>().single()
-        assertThat(receivedEvent.supportMessage).isEqualTo(saved)
-        val confirmationEvent = eventCaptor.allValues.filterIsInstance<SupportMessageConfirmationEmailRequested>().single()
-        assertThat(confirmationEvent.to).isEqualTo("artist@test.com")
-        assertThat(confirmationEvent.artistName).isEqualTo("Test Artist")
+        verify(eventPublisher).publishEvent(eventCaptor.capture())
+        val event = eventCaptor.allValues.filterIsInstance<SupportMessageSubmittedEvent>().single()
+        assertThat(event.supportMessage).isEqualTo(saved)
     }
 
     @Test

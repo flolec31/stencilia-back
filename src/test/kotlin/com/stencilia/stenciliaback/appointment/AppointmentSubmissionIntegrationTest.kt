@@ -1,13 +1,20 @@
 package com.stencilia.stenciliaback.appointment
 
+import com.stencilia.stenciliaback.alert.entity.TestAccount
+import com.stencilia.stenciliaback.alert.repository.TestAccountRepository
+import com.stencilia.stenciliaback.alert.service.AdminAlertService
 import com.stencilia.stenciliaback.appointment.entity.TattooStyle
 import com.stencilia.stenciliaback.email.service.EmailService
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.never
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
@@ -26,6 +33,15 @@ class AppointmentSubmissionIntegrationTest : AbstractAppointmentIntegrationTest(
     @Autowired lateinit var objectMapper: ObjectMapper
 
     @MockitoBean lateinit var emailService: EmailService
+    @MockitoBean lateinit var adminAlertService: AdminAlertService
+
+    @Autowired lateinit var testAccountRepository: TestAccountRepository
+
+    @BeforeEach
+    @AfterEach
+    fun cleanupTestAccounts() {
+        testAccountRepository.deleteAll()
+    }
 
     private fun validFormBody(coverUp: Boolean = false, references: List<Map<String, Any?>> = emptyList()) =
         mapOf(
@@ -279,6 +295,77 @@ class AppointmentSubmissionIntegrationTest : AbstractAppointmentIntegrationTest(
             .andExpect(status().isNoContent)
 
         verify(emailService).sendAppointmentRequestConfirmationEmail(argThat { id == form.id })
+    }
+
+    @Test
+    fun `validating a request sends admin new-request alert with slug`() {
+        val artist = createActivatedArtist()
+        val form = createAppointment(artist, createClient(), verifiedAt = null)
+
+        mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+            .andExpect(status().isNoContent)
+
+        verify(adminAlertService).send("📋 New tattoo request sent to ${artist.slug}")
+    }
+
+    @Test
+    fun `re-validating sends no second admin alert`() {
+        val artist = createActivatedArtist()
+        val form = createAppointment(artist, createClient(), verifiedAt = null)
+
+        repeat(2) {
+            mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+                .andExpect(status().isNoContent)
+        }
+
+        verify(adminAlertService, times(1)).send(any())
+    }
+
+    @Test
+    fun `self-request still alerts admin`() {
+        val artist = createActivatedArtist()
+        val form = createAppointment(artist, createClient(email = artist.email), verifiedAt = null)
+
+        mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+            .andExpect(status().isNoContent)
+
+        verify(adminAlertService).send("📋 New tattoo request sent to ${artist.slug}")
+    }
+
+    @Test
+    fun `test-account client email sends no admin alert`() {
+        val artist = createActivatedArtist()
+        val form = createAppointment(artist, createClient(email = "client@test.com"), verifiedAt = null)
+        testAccountRepository.save(TestAccount("CLIENT@test.com"))
+
+        mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+            .andExpect(status().isNoContent)
+
+        verify(adminAlertService, never()).send(any())
+    }
+
+    @Test
+    fun `test-account artist email sends no alert on validation`() {
+        val artist = createActivatedArtist()
+        val form = createAppointment(artist, createClient(email = "client@test.com"), verifiedAt = null)
+        testAccountRepository.save(TestAccount(artist.email))
+
+        mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+            .andExpect(status().isNoContent)
+
+        verify(adminAlertService, never()).send(any())
+    }
+
+    @Test
+    fun `admin alert failure does not break request validation`() {
+        whenever(adminAlertService.send(any())).thenThrow(RuntimeException("boom"))
+        val artist = createActivatedArtist()
+        val form = createAppointment(artist, createClient(), verifiedAt = null)
+
+        mockMvc.perform(get("/appointment/verify").param("appointmentId", form.id.toString()))
+            .andExpect(status().isNoContent)
+
+        verify(emailService).sendAppointmentNotificationEmail(argThat { id == form.id })
     }
 
     @Test

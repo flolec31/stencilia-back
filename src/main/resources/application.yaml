@@ -22,6 +22,9 @@ app:
     from: ${APP_EMAIL_FROM:Stencilia <contact@stencilia.fr>}
   support:
     notification-email: ${APP_SUPPORT_NOTIFICATION_EMAIL:}
+  telegram:
+    bot-token: ${APP_TELEGRAM_BOT_TOKEN:}
+    chat-id: ${APP_TELEGRAM_CHAT_ID:}
   storage:
     endpoint: ${APP_STORAGE_ENDPOINT:}
     bucket: ${APP_STORAGE_BUCKET:}

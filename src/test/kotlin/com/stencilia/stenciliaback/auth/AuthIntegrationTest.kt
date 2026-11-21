@@ -1,6 +1,9 @@
 package com.stencilia.stenciliaback.auth
 
 import com.stencilia.stenciliaback.AbstractIntegrationTest
+import com.stencilia.stenciliaback.alert.entity.TestAccount
+import com.stencilia.stenciliaback.alert.repository.TestAccountRepository
+import com.stencilia.stenciliaback.alert.service.AdminAlertService
 import com.stencilia.stenciliaback.artist.entity.TattooArtist
 import com.stencilia.stenciliaback.artist.repository.TattooArtistRepository
 import com.stencilia.stenciliaback.auth.artist.dto.LoginRequestDto
@@ -54,8 +57,14 @@ class AuthIntegrationTest : AbstractIntegrationTest() {
     @Autowired
     lateinit var jwtService: JwtService
 
+    @Autowired
+    lateinit var testAccountRepository: TestAccountRepository
+
     @MockitoBean
     lateinit var emailService: EmailService
+
+    @MockitoBean
+    lateinit var adminAlertService: AdminAlertService
 
     @BeforeEach
     fun cleanup() {
@@ -63,6 +72,7 @@ class AuthIntegrationTest : AbstractIntegrationTest() {
         tokenRepository.deleteAll()
         refreshTokenRepository.deleteAll()
         artistRepository.deleteAll()
+        testAccountRepository.deleteAll()
     }
 
     @Test
@@ -248,6 +258,49 @@ class AuthIntegrationTest : AbstractIntegrationTest() {
         assertThat(artistRepository.findAll().single().activatedAt).isNotNull()
         assertThat(tokenRepository.findAll()).isEmpty()
         assertThat(refreshTokenRepository.findAll()).hasSize(1)
+    }
+
+    @Test
+    fun `verifying email sends admin sign-up alert with slug`() {
+        mockMvc.perform(
+            post("/auth/artist/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        RegisterRequestDto(
+                            "artist@test.com", "password123", "John Doe", "john-doe", "Paris", "FR"
+                        )
+                    )
+                )
+        )
+        val token = tokenRepository.findAll().single().token
+
+        mockMvc.perform(get("/auth/artist/verify").param("token", token))
+            .andExpect(status().isOk)
+
+        verify(adminAlertService).send("🎨 New artist signed up: john-doe")
+    }
+
+    @Test
+    fun `verifying a test-account artist sends no admin alert`() {
+        mockMvc.perform(
+            post("/auth/artist/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        RegisterRequestDto(
+                            "artist@test.com", "password123", "John Doe", "john-doe", "Paris", "FR"
+                        )
+                    )
+                )
+        )
+        testAccountRepository.save(TestAccount("artist@test.com"))
+        val token = tokenRepository.findAll().single().token
+
+        mockMvc.perform(get("/auth/artist/verify").param("token", token))
+            .andExpect(status().isOk)
+
+        verifyNoInteractions(adminAlertService)
     }
 
     @Test

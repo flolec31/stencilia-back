@@ -1,6 +1,6 @@
 package com.stencilia.stenciliaback.auth.artist.event
 
-data class PasswordResetEmailRequested(
+data class PasswordResetRequestedEvent(
     val to: String,
     val artistName: String,
     val token: String,

@@ -3,7 +3,7 @@ package com.stencilia.stenciliaback.discussion.service.implementation
 import com.stencilia.stenciliaback.appointment.entity.Appointment
 import com.stencilia.stenciliaback.appointment.service.AppointmentAccessService
 import com.stencilia.stenciliaback.discussion.entity.MessageSender
-import com.stencilia.stenciliaback.discussion.event.NewMessageEmailRequested
+import com.stencilia.stenciliaback.discussion.event.ArtistMessagePostedEvent
 import com.stencilia.stenciliaback.discussion.repository.MessageRepository
 import com.stencilia.stenciliaback.discussion.service.AbstractDiscussionService
 import com.stencilia.stenciliaback.storage.service.ImageUploadService
@@ -29,6 +29,6 @@ class DiscussionServiceImpl(
         appointmentAccessService.findOwnedAppointment(subjectId, appointmentId)
 
     override fun onMessagePosted(appointment: Appointment) {
-        eventPublisher.publishEvent(NewMessageEmailRequested(appointment))
+        eventPublisher.publishEvent(ArtistMessagePostedEvent(appointment))
     }
 }
