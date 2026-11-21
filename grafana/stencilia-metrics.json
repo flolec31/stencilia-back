@@ -30,12 +30,12 @@
     "to": "now"
   },
   "timepicker": {},
-  "title": "Stencilia — Metrics & Health",
+  "title": "Stencilia: Metrics & Health",
   "panels": [
     {
       "type": "row",
       "id": 1,
-      "title": "🩺 Health — at a glance",
+      "title": "🩺 Health at a glance",
       "collapsed": false,
       "gridPos": {
         "h": 1,
