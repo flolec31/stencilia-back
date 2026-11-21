@@ -20,10 +20,13 @@ interface PageVisitCountRepository : JpaRepository<PageVisitCount, UUID> {
     )
     fun increment(@Param("artistId") artistId: UUID)
 
+    // Native with an explicit bigint cast: Postgres SUM(bigint) yields numeric, which won't coerce
+    // to the Long return type.
     @Query(
-        "SELECT COALESCE(SUM(p.count), 0) FROM PageVisitCount p, TattooArtist a " +
-            "WHERE a.id = p.artistId " +
-            "AND NOT EXISTS (SELECT 1 FROM TestAccount t WHERE LOWER(t.email) = LOWER(a.email))",
+        value = "SELECT CAST(COALESCE(SUM(p.count), 0) AS bigint) FROM page_visit_count p " +
+            "JOIN tattoo_artist a ON a.id = p.artist_id " +
+            "WHERE NOT EXISTS (SELECT 1 FROM test_account t WHERE LOWER(t.email) = LOWER(a.email))",
+        nativeQuery = true,
     )
     fun sumVisitsExcludingTestAccounts(): Long
 }
