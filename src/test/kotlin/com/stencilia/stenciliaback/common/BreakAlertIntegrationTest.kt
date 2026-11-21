@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
- * BR-1c (#87): every server 5xx alerts the admin; BR-4: user/bot errors do not.
+ * Every server 5xx alerts the admin; user/bot errors (framework 4xx) do not.
  * Drives a real 500 through the public GET /artists/{slug} by stubbing its service to throw.
  * The 4xx cases use permitAll prefixes so the framework exception (not the security layer)
  * decides the status, exercising the ResponseEntityExceptionHandler branches the advice relies on.
@@ -40,7 +40,7 @@ class BreakAlertIntegrationTest : AbstractIntegrationTest() {
     @Test
     fun `a scanned unauthenticated URL (401) does not alert`() {
         // A bot hitting a random path matches no permitAll rule, so Spring Security answers 401
-        // before the dispatcher — it never reaches the advice (AC-4 "a scanned URL").
+        // before the dispatcher — it never reaches the advice.
         mockMvc.perform(get("/some-random-scan")).andExpect(status().isUnauthorized)
 
         verifyNoInteractions(adminAlertService)

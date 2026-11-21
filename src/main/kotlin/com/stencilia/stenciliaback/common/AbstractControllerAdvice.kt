@@ -7,7 +7,7 @@ import org.springframework.core.Ordered
  * Base for every domain-specific advice. Implements [Ordered] at highest precedence so these
  * specific handlers always outrank the lowest-precedence catch-all [UnhandledExceptionAdvice]:
  * without this they default to LOWEST_PRECEDENCE and tie with the catch-all, which could then
- * preempt a specific 4xx handler (turning a user error into an alerted 500). See #87.
+ * preempt a specific 4xx handler (turning a user error into an alerted 500).
  */
 abstract class AbstractControllerAdvice : Ordered {
 

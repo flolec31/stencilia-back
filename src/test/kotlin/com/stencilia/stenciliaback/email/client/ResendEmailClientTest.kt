@@ -29,7 +29,7 @@ class ResendEmailClientTest {
             client.sendEmail("client@x.com", "verify-artist-signup", mapOf("LINK" to "l"))
         }
 
-        verify(adminAlertService).send("✉️ Email failed to send — type: verify-artist-signup")
+        verify(adminAlertService).send("✉️ Email failed to send: verify-artist-signup")
         // BR-3: the alert carries the template id only, never the recipient address.
         verify(adminAlertService, never()).send(argThat { contains("client@x.com") })
     }

@@ -34,8 +34,7 @@ class ResendEmailClient(
             resend.emails().send(request)
         } catch (e: Exception) {
             logger.error("Failed to send email (template {}) to {}", templateId, to, e)
-            // BR-1b/BR-3: alert the admin with the email type only — never the recipient address.
-            adminAlertService.send("✉️ Email failed to send — type: $templateId")
+            adminAlertService.send("✉️ Email failed to send: $templateId")
             throw EmailDeliveryException("Failed to send verification email to $to: ${e.message}")
         }
     }
