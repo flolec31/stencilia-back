@@ -1,6 +1,5 @@
 package com.stencilia.stenciliaback.common
 
-import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
 
 /**
@@ -13,10 +12,5 @@ abstract class AbstractControllerAdvice : Ordered {
 
     override fun getOrder(): Int = Ordered.HIGHEST_PRECEDENCE
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-
-    protected fun handleException(e: Exception, is5xx: Boolean = false) : Map<String, String?>{
-        if (is5xx) logger.warn("⚠ Server-side exception ⚠", e)
-        return mapOf("error" to e.message)
-    }
+    protected fun handleException(e: Exception): Map<String, String?> = mapOf("error" to e.message)
 }

@@ -3,6 +3,7 @@ package com.stencilia.stenciliaback.common
 import com.stencilia.stenciliaback.AbstractIntegrationTest
 import com.stencilia.stenciliaback.alert.service.AdminAlertService
 import com.stencilia.stenciliaback.artist.service.TattooArtistService
+import com.stencilia.stenciliaback.storage.exception.ImageUploadFailedException
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -35,6 +36,16 @@ class BreakAlertIntegrationTest : AbstractIntegrationTest() {
         mockMvc.perform(get("/artists/jane-ink")).andExpect(status().isInternalServerError)
 
         verify(adminAlertService).send("💥 500 GET /artists/jane-ink — RuntimeException")
+    }
+
+    @Test
+    fun `a server-side failure that has its own 5xx exception type still alerts via the catch-all`() {
+        whenever(tattooArtistService.getProfileBySlug("jane-ink"))
+            .thenThrow(ImageUploadFailedException(RuntimeException("storage down")))
+
+        mockMvc.perform(get("/artists/jane-ink")).andExpect(status().isInternalServerError)
+
+        verify(adminAlertService).send("💥 500 GET /artists/jane-ink — ImageUploadFailedException")
     }
 
     @Test

@@ -23,5 +23,5 @@ class GlobalControllerAdvice : AbstractControllerAdvice() {
 
     @ExceptionHandler(EmailDeliveryException::class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
-    fun handleEmailDelivery(e: EmailDeliveryException) = handleException(e, is5xx = true)
+    fun handleEmailDelivery(e: EmailDeliveryException) = handleException(e)
 }

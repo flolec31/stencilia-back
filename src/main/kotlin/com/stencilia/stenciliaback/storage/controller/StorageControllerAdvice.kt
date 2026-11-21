@@ -2,7 +2,6 @@ package com.stencilia.stenciliaback.storage.controller
 
 import com.stencilia.stenciliaback.common.AbstractControllerAdvice
 import com.stencilia.stenciliaback.storage.exception.ImageTooLargeException
-import com.stencilia.stenciliaback.storage.exception.ImageUploadFailedException
 import com.stencilia.stenciliaback.storage.exception.InvalidImageContentTypeException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -20,7 +19,6 @@ class StorageControllerAdvice : AbstractControllerAdvice() {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleImageTooLarge(e: ImageTooLargeException) = handleException(e)
 
-    @ExceptionHandler(ImageUploadFailedException::class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    fun handleImageUploadFailed(e: ImageUploadFailedException) = handleException(e, is5xx = true)
+    // ImageUploadFailedException is a genuine server error with no dedicated handling: it falls
+    // through to the catch-all, which returns 500 and alerts the admin with the endpoint.
 }
