@@ -194,6 +194,15 @@ class AppointmentInboxListTest : AbstractAppointmentIntegrationTest() {
     }
 
     @Test
+    fun `inbox rejects a negative page with 400`() {
+        val artist = createActivatedArtist()
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+
+        mockMvc.perform(get("/appointment/inbox").param("page", "-1").header("Authorization", "Bearer $token"))
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
     fun `inbox pages are stable under an id tiebreak when verifiedAt is equal`() {
         val artist = createActivatedArtist()
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)

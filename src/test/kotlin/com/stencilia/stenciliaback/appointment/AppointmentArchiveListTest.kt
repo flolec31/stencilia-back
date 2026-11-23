@@ -59,6 +59,15 @@ class AppointmentArchiveListTest : AbstractAppointmentIntegrationTest() {
     }
 
     @Test
+    fun `archive rejects a negative page with 400`() {
+        val artist = createActivatedArtist()
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+
+        mockMvc.perform(get("/appointment/archive").param("page", "-1").header("Authorization", "Bearer $token"))
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
     fun `archive returns 401 when not authenticated`() {
         mockMvc.perform(get("/appointment/archive"))
             .andExpect(status().isUnauthorized)
