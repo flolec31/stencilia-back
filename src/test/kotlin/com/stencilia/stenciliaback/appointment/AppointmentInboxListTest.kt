@@ -93,7 +93,7 @@ class AppointmentInboxListTest : AbstractAppointmentIntegrationTest() {
     }
 
     @Test
-    fun `filter=new returns only new requests across the whole set`() {
+    fun `new=true returns only new requests across the whole set`() {
         val artist = createActivatedArtist()
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
         val client = createClient()
@@ -102,14 +102,14 @@ class AppointmentInboxListTest : AbstractAppointmentIntegrationTest() {
         repeat(3) { verified(artist, client, verifiedAt = base.minus(it.toLong(), ChronoUnit.SECONDS), new = true) }
         repeat(5) { verified(artist, client, verifiedAt = base.minus((10 + it).toLong(), ChronoUnit.SECONDS), new = false) }
 
-        mockMvc.perform(get("/appointment/inbox").param("filter", "NEW").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").param("new", "true").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.total").value(3))
             .andExpect(jsonPath("$.content[*].new", everyItem(`is`(true))))
     }
 
     @Test
-    fun `filter=unread returns only requests with an unread client message`() {
+    fun `unread=true returns only requests with an unread client message`() {
         val artist = createActivatedArtist()
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
         val client = createClient()
@@ -120,7 +120,7 @@ class AppointmentInboxListTest : AbstractAppointmentIntegrationTest() {
         }
         repeat(4) { verified(artist, client, verifiedAt = base.minus((10 + it).toLong(), ChronoUnit.SECONDS), new = false) }
 
-        mockMvc.perform(get("/appointment/inbox").param("filter", "UNREAD").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").param("unread", "true").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.total").value(2))
             .andExpect(jsonPath("$.content[*].unreadMessages", everyItem(`is`(true))))
@@ -128,7 +128,7 @@ class AppointmentInboxListTest : AbstractAppointmentIntegrationTest() {
     }
 
     @Test
-    fun `filter=new and unread returns the union with no duplicates`() {
+    fun `new=true and unread=true returns the union with no duplicates`() {
         val artist = createActivatedArtist()
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
         val client = createClient()
@@ -140,7 +140,7 @@ class AppointmentInboxListTest : AbstractAppointmentIntegrationTest() {
         val neither = verified(artist, client, verifiedAt = base.minus(3, ChronoUnit.SECONDS), new = false)
 
         mockMvc.perform(
-            get("/appointment/inbox").param("filter", "NEW", "UNREAD").header("Authorization", "Bearer $token")
+            get("/appointment/inbox").param("new", "true").param("unread", "true").header("Authorization", "Bearer $token")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.total").value(3))
@@ -171,26 +171,12 @@ class AppointmentInboxListTest : AbstractAppointmentIntegrationTest() {
     }
 
     @Test
-    fun `inbox rejects an unknown filter value with 400`() {
+    fun `inbox rejects a non-boolean filter value with 400`() {
         val artist = createActivatedArtist()
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
 
-        mockMvc.perform(get("/appointment/inbox").param("filter", "bogus").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").param("new", "bogus").header("Authorization", "Bearer $token"))
             .andExpect(status().isBadRequest)
-    }
-
-    @Test
-    fun `inbox accepts a lowercase filter value`() {
-        val artist = createActivatedArtist()
-        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
-        val client = createClient()
-        verified(artist, client, verifiedAt = Instant.now(), new = true)
-        verified(artist, client, verifiedAt = Instant.now().minus(1, ChronoUnit.SECONDS), new = false)
-
-        mockMvc.perform(get("/appointment/inbox").param("filter", "new").header("Authorization", "Bearer $token"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.total").value(1))
-            .andExpect(jsonPath("$.content[*].new", everyItem(`is`(true))))
     }
 
     @Test

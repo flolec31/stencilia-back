@@ -2,7 +2,6 @@ package com.stencilia.stenciliaback.appointment.controller
 
 import com.stencilia.stenciliaback.appointment.dto.AppointmentDetailsResponseDto
 import com.stencilia.stenciliaback.appointment.dto.AppointmentItemResponseDto
-import com.stencilia.stenciliaback.appointment.dto.InboxFilter
 import com.stencilia.stenciliaback.appointment.service.AppointmentManagementService
 import com.stencilia.stenciliaback.common.dto.PagedResponseDto
 import jakarta.validation.constraints.PositiveOrZero
@@ -22,11 +21,12 @@ class AppointmentManagementController(
     @GetMapping("/inbox")
     fun getInbox(
         authentication: JwtAuthenticationToken,
-        @RequestParam(required = false) filter: Set<InboxFilter>?,
+        @RequestParam(defaultValue = "false") new: Boolean,
+        @RequestParam(defaultValue = "false") unread: Boolean,
         @RequestParam(defaultValue = "0") @PositiveOrZero page: Int,
     ): PagedResponseDto<AppointmentItemResponseDto> {
         val artistId = UUID.fromString(authentication.token.subject)
-        val appointments = appointmentManagementService.getInbox(artistId, filter ?: emptySet(), page)
+        val appointments = appointmentManagementService.getInbox(artistId, new, unread, page)
         return PagedResponseDto(
             content = appointments.content,
             total = appointments.totalElements,

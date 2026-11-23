@@ -2,7 +2,6 @@ package com.stencilia.stenciliaback.appointment.service.implementation
 
 import com.stencilia.stenciliaback.appointment.dto.AppointmentDetailsResponseDto
 import com.stencilia.stenciliaback.appointment.dto.AppointmentItemResponseDto
-import com.stencilia.stenciliaback.appointment.dto.InboxFilter
 import com.stencilia.stenciliaback.appointment.dto.ReferenceDetailsResponseDto
 import com.stencilia.stenciliaback.appointment.entity.Appointment
 import com.stencilia.stenciliaback.appointment.exception.AppointmentAlreadyNewException
@@ -35,12 +34,12 @@ class AppointmentManagementServiceImpl(
         const val PAGE_SIZE = 20
     }
 
-    override fun getInbox(artistId: UUID, filters: Set<InboxFilter>, page: Int): Page<AppointmentItemResponseDto> =
+    override fun getInbox(artistId: UUID, new: Boolean, unread: Boolean, page: Int): Page<AppointmentItemResponseDto> =
         mapWithUnreadFlag(
             appointmentRepository.findInbox(
                 artistId = artistId,
-                filterNew = InboxFilter.NEW in filters,
-                filterUnread = InboxFilter.UNREAD in filters,
+                filterNew = new,
+                filterUnread = unread,
                 clientSender = MessageSender.CLIENT,
                 pageable = PageRequest.of(page, PAGE_SIZE)
             )

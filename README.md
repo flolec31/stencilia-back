@@ -82,7 +82,7 @@ Tests spin up Postgres and s3mock via Testcontainers automatically. `EmailServic
 | POST   | `/appointment/{slug}`              | public | Submit appointment request               |
 | POST   | `/appointment/{slug}/reference`    | public | Upload reference photo                   |
 | GET    | `/appointment/verify`              | public | Verify appointment (client email link)   |
-| GET    | `/appointment/inbox`               | JWT    | List own non-archived requests, batched (20/page). `?filter=new`/`unread` (repeatable, OR-combined); ordered new, then unread, then recent |
+| GET    | `/appointment/inbox`               | JWT    | List own non-archived requests, batched (20/page). Optional `?new=true`/`?unread=true` (both → OR); ordered new, then unread, then recent |
 | GET    | `/appointment/archive`             | JWT    | List own archived requests, batched (20/page), most recent first |
 | GET    | `/appointment/{id}`                | JWT    | Get appointment details                  |
 | POST   | `/appointment/{id}/archive`        | JWT    | Archive appointment                      |
