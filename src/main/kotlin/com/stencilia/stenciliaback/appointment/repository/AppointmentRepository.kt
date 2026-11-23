@@ -13,17 +13,21 @@ import java.util.UUID
 
 @Repository
 interface AppointmentRepository : JpaRepository<Appointment, UUID> {
-    fun findByArtistIdAndVerifiedAtNotNull(artistId: UUID, pageable: Pageable): Page<Appointment>
+
+    fun findByIdAndVerifiedAtNotNull(appointmentId: UUID): Optional<Appointment>
+
     fun findByArtistIdAndVerifiedAtNotNullAndArchivedTrueOrderByVerifiedAtDescIdAsc(
         artistId: UUID,
         pageable: Pageable
     ): Page<Appointment>
 
-    /* Inbox feed: non-archived verified requests of an artist.
-       When neither filter flag is set every request passes; otherwise the selected
-       predicates are OR-combined (new, or has an unread client message).
-       Ordered: new first, then requests with an unread client message, then most
-       recently received, with id as a stable tiebreaker. */
+    fun findByArtistIdAndClientEmailIgnoreCaseAndVerifiedAtNotNullOrderBySubmittedAtDesc(
+        artistId: UUID,
+        email: String
+    ): List<Appointment>
+
+    /* Inbox feed: an artist's non-archived verified requests, optionally narrowed to new
+       and/or unread (OR-combined), ordered new first, then unread, then most recent (id breaks ties). */
     @Query(
         """
         SELECT a FROM Appointment a
@@ -42,17 +46,6 @@ interface AppointmentRepository : JpaRepository<Appointment, UUID> {
             THEN 1 ELSE 0 END) DESC,
           a.verifiedAt DESC,
           a.id ASC
-        """,
-        countQuery = """
-        SELECT COUNT(a) FROM Appointment a
-        WHERE a.artist.id = :artistId AND a.verifiedAt IS NOT NULL AND a.archived = false
-          AND (
-            (:filterNew = false AND :filterUnread = false)
-            OR (:filterNew = true AND a.new = true)
-            OR (:filterUnread = true AND EXISTS (
-                  SELECT 1 FROM Message m
-                  WHERE m.appointment = a AND m.sender = :clientSender AND m.readAt IS NULL))
-          )
         """
     )
     fun findInbox(
@@ -62,9 +55,4 @@ interface AppointmentRepository : JpaRepository<Appointment, UUID> {
         @Param("clientSender") clientSender: MessageSender,
         pageable: Pageable
     ): Page<Appointment>
-    fun findByIdAndVerifiedAtNotNull(appointmentId: UUID): Optional<Appointment>
-    fun findByArtistIdAndClientEmailIgnoreCaseAndVerifiedAtNotNullOrderBySubmittedAtDesc(
-        artistId: UUID,
-        email: String
-    ): List<Appointment>
 }
