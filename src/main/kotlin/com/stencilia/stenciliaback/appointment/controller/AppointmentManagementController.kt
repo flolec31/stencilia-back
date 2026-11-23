@@ -33,6 +33,21 @@ class AppointmentManagementController(
         )
     }
 
+    @GetMapping("/archive")
+    fun getArchive(
+        authentication: JwtAuthenticationToken,
+        @RequestParam(defaultValue = "0") page: Int,
+    ): PagedResponseDto<AppointmentItemResponseDto> {
+        val artistId = UUID.fromString(authentication.token.subject)
+        val appointments = appointmentManagementService.getArchive(artistId, page)
+        return PagedResponseDto(
+            content = appointments.content,
+            total = appointments.totalElements,
+            page = appointments.number,
+            pageCount = appointments.totalPages
+        )
+    }
+
     @GetMapping("/{appointmentId}")
     fun getAppointment(
         authentication: JwtAuthenticationToken,

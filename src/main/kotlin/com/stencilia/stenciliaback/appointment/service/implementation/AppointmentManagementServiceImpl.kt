@@ -15,6 +15,7 @@ import com.stencilia.stenciliaback.discussion.entity.MessageSender
 import com.stencilia.stenciliaback.discussion.repository.MessageRepository
 import com.stencilia.stenciliaback.storage.service.StorageService
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -30,10 +31,25 @@ class AppointmentManagementServiceImpl(
     private val messageRepository: MessageRepository,
 ) : AppointmentManagementService {
 
-    override fun getAppointmentsOf(artistId: UUID, pageable: Pageable): Page<AppointmentItemResponseDto> {
-        val page = appointmentRepository.findByArtistIdAndVerifiedAtNotNull(artistId, pageable)
+    private companion object {
+        const val PAGE_SIZE = 20
+    }
+
+    override fun getAppointmentsOf(artistId: UUID, pageable: Pageable): Page<AppointmentItemResponseDto> =
+        mapWithUnreadFlag(appointmentRepository.findByArtistIdAndVerifiedAtNotNull(artistId, pageable))
+
+    override fun getArchive(artistId: UUID, page: Int): Page<AppointmentItemResponseDto> =
+        mapWithUnreadFlag(
+            appointmentRepository.findByArtistIdAndVerifiedAtNotNullAndArchivedTrueOrderByVerifiedAtDescIdAsc(
+                artistId,
+                PageRequest.of(page, PAGE_SIZE)
+            )
+        )
+
+    /* Maps a page of appointments to item DTOs, flagging those with an unread client message
+       via a single batched lookup over the page ids. */
+    private fun mapWithUnreadFlag(page: Page<Appointment>): Page<AppointmentItemResponseDto> {
         val ids = page.content.map { it.id }
-        /* Ids of appointment with unread messages */
         val unreadIds =
             if (ids.isEmpty()) emptySet()
             else messageRepository.findAppointmentIdsWithUnreadFrom(ids, MessageSender.CLIENT)

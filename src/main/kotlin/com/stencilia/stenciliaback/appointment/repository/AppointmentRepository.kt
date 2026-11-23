@@ -11,6 +11,10 @@ import java.util.UUID
 @Repository
 interface AppointmentRepository : JpaRepository<Appointment, UUID> {
     fun findByArtistIdAndVerifiedAtNotNull(artistId: UUID, pageable: Pageable): Page<Appointment>
+    fun findByArtistIdAndVerifiedAtNotNullAndArchivedTrueOrderByVerifiedAtDescIdAsc(
+        artistId: UUID,
+        pageable: Pageable
+    ): Page<Appointment>
     fun findByIdAndVerifiedAtNotNull(appointmentId: UUID): Optional<Appointment>
     fun findByArtistIdAndClientEmailIgnoreCaseAndVerifiedAtNotNullOrderBySubmittedAtDesc(
         artistId: UUID,

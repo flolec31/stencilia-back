@@ -8,6 +8,7 @@ import java.util.*
 
 interface AppointmentManagementService {
     fun getAppointmentsOf(artistId: UUID, pageable: Pageable): Page<AppointmentItemResponseDto>
+    fun getArchive(artistId: UUID, page: Int): Page<AppointmentItemResponseDto>
     fun getAppointmentDetails(artistId: UUID, appointmentId: UUID): AppointmentDetailsResponseDto
     fun archiveAppointment(artistId: UUID, appointmentId: UUID)
     fun unarchiveAppointment(artistId: UUID, appointmentId: UUID)
