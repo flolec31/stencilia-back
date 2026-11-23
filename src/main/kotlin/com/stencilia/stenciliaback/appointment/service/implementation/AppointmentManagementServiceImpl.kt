@@ -2,6 +2,7 @@ package com.stencilia.stenciliaback.appointment.service.implementation
 
 import com.stencilia.stenciliaback.appointment.dto.AppointmentDetailsResponseDto
 import com.stencilia.stenciliaback.appointment.dto.AppointmentItemResponseDto
+import com.stencilia.stenciliaback.appointment.dto.InboxFilter
 import com.stencilia.stenciliaback.appointment.dto.ReferenceDetailsResponseDto
 import com.stencilia.stenciliaback.appointment.entity.Appointment
 import com.stencilia.stenciliaback.appointment.exception.AppointmentAlreadyNewException
@@ -16,7 +17,6 @@ import com.stencilia.stenciliaback.discussion.repository.MessageRepository
 import com.stencilia.stenciliaback.storage.service.StorageService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -35,8 +35,16 @@ class AppointmentManagementServiceImpl(
         const val PAGE_SIZE = 20
     }
 
-    override fun getAppointmentsOf(artistId: UUID, pageable: Pageable): Page<AppointmentItemResponseDto> =
-        mapWithUnreadFlag(appointmentRepository.findByArtistIdAndVerifiedAtNotNull(artistId, pageable))
+    override fun getInbox(artistId: UUID, filters: Set<InboxFilter>, page: Int): Page<AppointmentItemResponseDto> =
+        mapWithUnreadFlag(
+            appointmentRepository.findInbox(
+                artistId = artistId,
+                filterNew = InboxFilter.NEW in filters,
+                filterUnread = InboxFilter.UNREAD in filters,
+                clientSender = MessageSender.CLIENT,
+                pageable = PageRequest.of(page, PAGE_SIZE)
+            )
+        )
 
     override fun getArchive(artistId: UUID, page: Int): Page<AppointmentItemResponseDto> =
         mapWithUnreadFlag(

@@ -2,11 +2,9 @@ package com.stencilia.stenciliaback.appointment.controller
 
 import com.stencilia.stenciliaback.appointment.dto.AppointmentDetailsResponseDto
 import com.stencilia.stenciliaback.appointment.dto.AppointmentItemResponseDto
+import com.stencilia.stenciliaback.appointment.dto.InboxFilter
 import com.stencilia.stenciliaback.appointment.service.AppointmentManagementService
 import com.stencilia.stenciliaback.common.dto.PagedResponseDto
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
-import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.bind.annotation.*
@@ -18,13 +16,14 @@ class AppointmentManagementController(
     private val appointmentManagementService: AppointmentManagementService
 ) {
 
-    @GetMapping
-    fun getAppointmentsList(
+    @GetMapping("/inbox")
+    fun getInbox(
         authentication: JwtAuthenticationToken,
-        @PageableDefault(size = 20, sort = ["verifiedAt"], direction = Sort.Direction.DESC) pageable: Pageable
+        @RequestParam(required = false) filter: Set<InboxFilter>?,
+        @RequestParam(defaultValue = "0") page: Int,
     ): PagedResponseDto<AppointmentItemResponseDto> {
         val artistId = UUID.fromString(authentication.token.subject)
-        val appointments = appointmentManagementService.getAppointmentsOf(artistId, pageable)
+        val appointments = appointmentManagementService.getInbox(artistId, filter ?: emptySet(), page)
         return PagedResponseDto(
             content = appointments.content,
             total = appointments.totalElements,
