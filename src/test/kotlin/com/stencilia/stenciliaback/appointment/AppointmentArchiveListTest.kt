@@ -57,4 +57,24 @@ class AppointmentArchiveListTest : AbstractAppointmentIntegrationTest() {
             .andExpect(jsonPath("$.content[*].archived", everyItem(`is`(true))))
             .andExpect(jsonPath("$.content[4].id").value(archived[24].id.toString()))
     }
+
+    @Test
+    fun `archive returns 401 when not authenticated`() {
+        mockMvc.perform(get("/appointment/archive"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `archive does not return another artists requests`() {
+        val artist = createActivatedArtist(slug = "my-artist")
+        val other = createActivatedArtist(slug = "other-artist")
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+        val client = createClient()
+        createAppointment(artist = other, client = client, archived = true)
+
+        mockMvc.perform(get("/appointment/archive").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content").isEmpty)
+            .andExpect(jsonPath("$.total").value(0))
+    }
 }

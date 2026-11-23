@@ -152,6 +152,48 @@ class AppointmentInboxListTest : AbstractAppointmentIntegrationTest() {
     }
 
     @Test
+    fun `inbox with no filter returns all non-archived requests, new and not`() {
+        val artist = createActivatedArtist()
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+        val client = createClient()
+        val base = Instant.now()
+
+        verified(artist, client, verifiedAt = base, new = true)
+        verified(artist, client, verifiedAt = base.minus(1, ChronoUnit.SECONDS), new = false)
+        verified(artist, client, verifiedAt = base.minus(2, ChronoUnit.SECONDS), new = false)
+        verified(artist, client, verifiedAt = base.minus(3, ChronoUnit.SECONDS), archived = true)
+
+        mockMvc.perform(get("/appointment/inbox").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.total").value(3))
+            .andExpect(jsonPath("$.content[*].new", org.hamcrest.Matchers.hasItem(true)))
+            .andExpect(jsonPath("$.content[*].new", org.hamcrest.Matchers.hasItem(false)))
+    }
+
+    @Test
+    fun `inbox rejects an unknown filter value with 400`() {
+        val artist = createActivatedArtist()
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+
+        mockMvc.perform(get("/appointment/inbox").param("filter", "bogus").header("Authorization", "Bearer $token"))
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `inbox accepts a lowercase filter value`() {
+        val artist = createActivatedArtist()
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+        val client = createClient()
+        verified(artist, client, verifiedAt = Instant.now(), new = true)
+        verified(artist, client, verifiedAt = Instant.now().minus(1, ChronoUnit.SECONDS), new = false)
+
+        mockMvc.perform(get("/appointment/inbox").param("filter", "new").header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.total").value(1))
+            .andExpect(jsonPath("$.content[*].new", everyItem(`is`(true))))
+    }
+
+    @Test
     fun `inbox pages are stable under an id tiebreak when verifiedAt is equal`() {
         val artist = createActivatedArtist()
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
