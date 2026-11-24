@@ -50,7 +50,7 @@ class AppointmentManagementIntegrationTest : AbstractAppointmentIntegrationTest(
 
     @Test
     fun `get appointments list returns 401 when not authenticated`() {
-        mockMvc.perform(get("/appointment/"))
+        mockMvc.perform(get("/appointment/inbox"))
             .andExpect(status().isUnauthorized)
     }
 
@@ -59,7 +59,7 @@ class AppointmentManagementIntegrationTest : AbstractAppointmentIntegrationTest(
         val artist = createActivatedArtist()
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
 
-        mockMvc.perform(get("/appointment").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content").isEmpty)
             .andExpect(jsonPath("$.total").value(0))
@@ -73,7 +73,7 @@ class AppointmentManagementIntegrationTest : AbstractAppointmentIntegrationTest(
         val client = tattooClientRepository.save(TattooClient(email = "client@test.com", firstName = "Jane", lastName = "Doe"))
         appointmentRepository.save(Appointment(artist = artist, client = client, tattooDescription = "desc", tattooPlacement = "arm", tattooSize = "10x10cm", firstTattoo = false, coverUp = false, color = false, style = TattooStyle.REALISM))
 
-        mockMvc.perform(get("/appointment").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content").isEmpty)
             .andExpect(jsonPath("$.total").value(0))
@@ -85,7 +85,7 @@ class AppointmentManagementIntegrationTest : AbstractAppointmentIntegrationTest(
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
         val appointment = saveVerifiedAppointment(artist)
 
-        mockMvc.perform(get("/appointment").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content[0].id").value(appointment.id.toString()))
             .andExpect(jsonPath("$.content[0].firstName").value("Jane"))
@@ -106,7 +106,7 @@ class AppointmentManagementIntegrationTest : AbstractAppointmentIntegrationTest(
         val appointment = saveVerifiedAppointment(artist)
         messageRepository.save(Message(appointment = appointment, sender = MessageSender.CLIENT, content = "hi"))
 
-        mockMvc.perform(get("/appointment").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content[0].id").value(appointment.id.toString()))
             .andExpect(jsonPath("$.content[0].unreadMessages").value(true))
@@ -120,23 +120,9 @@ class AppointmentManagementIntegrationTest : AbstractAppointmentIntegrationTest(
         messageRepository.save(Message(appointment = appointment, sender = MessageSender.CLIENT, content = "seen", readAt = Instant.now()))
         messageRepository.save(Message(appointment = appointment, sender = MessageSender.ARTIST, content = "reply"))
 
-        mockMvc.perform(get("/appointment").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content[0].unreadMessages").value(false))
-    }
-
-    @Test
-    fun `get appointments list returns correct pagination metadata`() {
-        val artist = createActivatedArtist()
-        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
-        repeat(3) { saveVerifiedAppointment(artist) }
-
-        mockMvc.perform(get("/appointment").param("size", "2").header("Authorization", "Bearer $token"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.content.length()").value(2))
-            .andExpect(jsonPath("$.total").value(3))
-            .andExpect(jsonPath("$.page").value(0))
-            .andExpect(jsonPath("$.pageCount").value(2))
     }
 
     @Test
@@ -146,7 +132,7 @@ class AppointmentManagementIntegrationTest : AbstractAppointmentIntegrationTest(
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
         saveVerifiedAppointment(other)
 
-        mockMvc.perform(get("/appointment").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content").isEmpty)
             .andExpect(jsonPath("$.total").value(0))
@@ -159,7 +145,7 @@ class AppointmentManagementIntegrationTest : AbstractAppointmentIntegrationTest(
         val older = saveVerifiedAppointment(artist, verifiedAt = Instant.now().minus(1, ChronoUnit.HOURS))
         val newer = saveVerifiedAppointment(artist, verifiedAt = Instant.now())
 
-        mockMvc.perform(get("/appointment").header("Authorization", "Bearer $token"))
+        mockMvc.perform(get("/appointment/inbox").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content[0].id").value(newer.id.toString()))
             .andExpect(jsonPath("$.content[1].id").value(older.id.toString()))

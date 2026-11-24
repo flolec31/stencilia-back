@@ -4,27 +4,44 @@ import com.stencilia.stenciliaback.appointment.dto.AppointmentDetailsResponseDto
 import com.stencilia.stenciliaback.appointment.dto.AppointmentItemResponseDto
 import com.stencilia.stenciliaback.appointment.service.AppointmentManagementService
 import com.stencilia.stenciliaback.common.dto.PagedResponseDto
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
-import org.springframework.data.web.PageableDefault
+import jakarta.validation.constraints.PositiveOrZero
 import org.springframework.http.HttpStatus
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
 @RequestMapping("/appointment")
+@Validated
 class AppointmentManagementController(
     private val appointmentManagementService: AppointmentManagementService
 ) {
 
-    @GetMapping
-    fun getAppointmentsList(
+    @GetMapping("/inbox")
+    fun getInbox(
         authentication: JwtAuthenticationToken,
-        @PageableDefault(size = 20, sort = ["verifiedAt"], direction = Sort.Direction.DESC) pageable: Pageable
+        @RequestParam(defaultValue = "false") new: Boolean,
+        @RequestParam(defaultValue = "false") unread: Boolean,
+        @RequestParam(defaultValue = "0") @PositiveOrZero page: Int,
     ): PagedResponseDto<AppointmentItemResponseDto> {
         val artistId = UUID.fromString(authentication.token.subject)
-        val appointments = appointmentManagementService.getAppointmentsOf(artistId, pageable)
+        val appointments = appointmentManagementService.getInbox(artistId, new, unread, page)
+        return PagedResponseDto(
+            content = appointments.content,
+            total = appointments.totalElements,
+            page = appointments.number,
+            pageCount = appointments.totalPages
+        )
+    }
+
+    @GetMapping("/archive")
+    fun getArchive(
+        authentication: JwtAuthenticationToken,
+        @RequestParam(defaultValue = "0") @PositiveOrZero page: Int,
+    ): PagedResponseDto<AppointmentItemResponseDto> {
+        val artistId = UUID.fromString(authentication.token.subject)
+        val appointments = appointmentManagementService.getArchive(artistId, page)
         return PagedResponseDto(
             content = appointments.content,
             total = appointments.totalElements,
