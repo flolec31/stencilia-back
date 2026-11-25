@@ -11,12 +11,12 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
 data class AppointmentFormRequestDto(
-    @field:NotBlank @field:Email val email: String,
-    @field:NotBlank val firstName: String,
-    @field:NotBlank val lastName: String,
-    @field:NotBlank val description: String,
-    @field:NotBlank val placement: String,
-    @field:NotBlank val size: String,
+    @field:NotBlank @field:Email @field:Size(max = 254) val email: String,
+    @field:NotBlank @field:Size(max = 100) val firstName: String,
+    @field:NotBlank @field:Size(max = 100) val lastName: String,
+    @field:NotBlank @field:Size(max = 2000) val description: String,
+    @field:NotBlank @field:Size(max = 255) val placement: String,
+    @field:NotBlank @field:Size(max = 255) val size: String,
     val firstTattoo: Boolean,
     val coverUp: Boolean,
     val color: Boolean,

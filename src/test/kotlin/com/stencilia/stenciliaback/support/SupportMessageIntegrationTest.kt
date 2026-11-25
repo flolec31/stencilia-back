@@ -194,7 +194,7 @@ class SupportMessageIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `submit support message exceeding 1500 characters returns 400`() {
+    fun `submit support message exceeding 2000 characters returns 400`() {
         val artist = createActivatedArtist()
         val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
 
@@ -202,8 +202,24 @@ class SupportMessageIntegrationTest : AbstractIntegrationTest() {
             post("/support")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer $token")
-                .content(objectMapper.writeValueAsString(messageBody(message = "a".repeat(1501))))
+                .content(objectMapper.writeValueAsString(messageBody(message = "a".repeat(2001))))
         ).andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `submit support message exactly at the 2000 limit is saved in full`() {
+        val artist = createActivatedArtist()
+        val token = jwtService.generateAccessToken(artist.id, Role.ARTIST)
+        val atLimit = "a".repeat(2000)
+
+        mockMvc.perform(
+            post("/support")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer $token")
+                .content(objectMapper.writeValueAsString(messageBody(message = atLimit)))
+        ).andExpect(status().isNoContent)
+
+        assertThat(supportMessageRepository.findAll().single().message).isEqualTo(atLimit)
     }
 
     @Test
