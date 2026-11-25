@@ -171,6 +171,88 @@ class AppointmentSubmissionIntegrationTest : AbstractAppointmentIntegrationTest(
         ).andExpect(status().isBadRequest)
     }
 
+    // --- field length limits (back #78) ---
+
+    private fun submitForm(body: Map<String, Any?>) =
+        mockMvc.perform(
+            post("/appointment/test-artist")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body))
+        )
+
+    @Test
+    fun `submit appointment form with description one over the 2000 limit returns 400 and saves nothing`() {
+        createActivatedArtist()
+
+        submitForm(validFormBody().toMutableMap().apply { put("description", "a".repeat(2001)) })
+            .andExpect(status().isBadRequest)
+
+        assertThat(appointmentRepository.findAll()).isEmpty()
+        assertThat(tattooClientRepository.findAll()).isEmpty()
+    }
+
+    @Test
+    fun `submit appointment form with a 10000 character description returns 400`() {
+        createActivatedArtist()
+
+        submitForm(validFormBody().toMutableMap().apply { put("description", "a".repeat(10_000)) })
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `submit appointment form with description exactly at the 2000 limit is saved in full`() {
+        createActivatedArtist()
+        val atLimit = "a".repeat(2000)
+
+        submitForm(validFormBody().toMutableMap().apply { put("description", atLimit) })
+            .andExpect(status().isCreated)
+
+        assertThat(appointmentRepository.findAll().single().tattooDescription).isEqualTo(atLimit)
+    }
+
+    @Test
+    fun `submit appointment form with first name over the 100 limit returns 400`() {
+        createActivatedArtist()
+
+        submitForm(validFormBody().toMutableMap().apply { put("firstName", "a".repeat(101)) })
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `submit appointment form with email over the 254 limit returns 400`() {
+        createActivatedArtist()
+        val longEmail = "a".repeat(250) + "@test.com"
+
+        submitForm(validFormBody().toMutableMap().apply { put("email", longEmail) })
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `submit appointment form with placement over the 255 limit returns 400`() {
+        createActivatedArtist()
+
+        submitForm(validFormBody().toMutableMap().apply { put("placement", "a".repeat(256)) })
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `submit appointment form with reference comment over the 2000 limit returns 400`() {
+        createActivatedArtist()
+        val refs = listOf(mapOf("key" to "uploads/ref1.jpg", "comment" to "a".repeat(2001)))
+
+        submitForm(validFormBody(references = refs).toMutableMap())
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `submit appointment form with more than 10 references returns 400`() {
+        createActivatedArtist()
+        val refs = (1..11).map { mapOf("key" to "uploads/ref$it.jpg", "comment" to null) }
+
+        submitForm(validFormBody(references = refs).toMutableMap())
+            .andExpect(status().isBadRequest)
+    }
+
     // --- POST /appointment/{slug}/reference ---
 
     @Test

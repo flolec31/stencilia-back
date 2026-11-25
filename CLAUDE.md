@@ -84,6 +84,8 @@ This is a Spring Boot application using Kotlin + Spring Boot 4 + Java 24 + Gradl
 **Kotlin conventions:**
 - Use the `$$` string prefix for `@Value` annotations to avoid escaping `$`: `@Value($$"${some.property}")` not `@Value("\${some.property}")`.
 
+**Input length limits** — every free-text request field and every list has a server-enforced max via bean validation (`@Size`), so an over-long value is a `400` (Spring's default bean-validation response), never a truncation or a server error, and never exceeds the backing column. Default categories: names 100, emails 254, single-line short texts 255, multi-line long texts 2000, lists capped per endpoint (references max 10); fields with a stricter format rule (slug, 6-digit access code, password) keep it, and passwords additionally cap at 72 so an over-72-byte value is a clean `400` rather than a BCrypt error. Server-issued identifiers replayed by the client (storage keys, reset token) are bounded to their column capacity; opaque UUID tokens (refresh tokens, verify token) are not length-constrained because a bad value is already rejected cleanly. The full per-field inventory is maintained on back issue #78.
+
 **JPA entities** must be in classes annotated with `@Entity`, `@MappedSuperclass`, or `@Embeddable` — the `allOpen` plugin makes these open automatically so JPA proxying works without `open` keywords.
 
 ## Analytics & alerting

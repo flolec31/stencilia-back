@@ -4,13 +4,16 @@ import com.stencilia.stenciliaback.auth.artist.dto.*
 import com.stencilia.stenciliaback.auth.dto.LoginResponseDto
 import com.stencilia.stenciliaback.auth.artist.service.AuthService
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
 @RestController
 @RequestMapping("/auth/artist")
+@Validated
 class ArtistAuthController(
     private val authService: AuthService
 ) {
@@ -26,7 +29,7 @@ class ArtistAuthController(
 
     @PostMapping("/resend-verification")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun resendVerification(@RequestParam email: String) =
+    fun resendVerification(@RequestParam @Size(max = 254) email: String) =
         authService.resendVerification(email)
 
     @PostMapping("/login")
@@ -44,7 +47,7 @@ class ArtistAuthController(
 
     @PostMapping("/forgot-password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun forgotPassword(@RequestParam email: String) =
+    fun forgotPassword(@RequestParam @Size(max = 254) email: String) =
         authService.forgotPassword(email)
 
     @PostMapping("/reset-password")

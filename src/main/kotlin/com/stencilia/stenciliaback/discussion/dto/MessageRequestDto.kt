@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size
 
 data class MessageRequestDto(
     @field:Size(max = 2000) val content: String? = null,
-    val imageKey: String? = null,
+    @field:Size(max = 1024) val imageKey: String? = null,
 ) {
 
     @Suppress("unused")

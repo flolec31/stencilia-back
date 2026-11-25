@@ -422,6 +422,22 @@ class AuthIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
+    fun `resend verification with email over the 254 limit returns 400`() {
+        mockMvc.perform(post("/auth/artist/resend-verification").param("email", "a".repeat(250) + "@test.com"))
+            .andExpect(status().isBadRequest)
+
+        verifyNoInteractions(emailService)
+    }
+
+    @Test
+    fun `forgot password with email over the 254 limit returns 400`() {
+        mockMvc.perform(post("/auth/artist/forgot-password").param("email", "a".repeat(250) + "@test.com"))
+            .andExpect(status().isBadRequest)
+
+        verifyNoInteractions(emailService)
+    }
+
+    @Test
     fun `resend verification for already activated artist returns 204 silently`() {
         val artistId = UUID.randomUUID()
         artistRepository.save(
