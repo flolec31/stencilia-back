@@ -30,15 +30,17 @@ class FlashServiceImpl(
     @Transactional
     override fun create(artistId: UUID, image: MultipartFile, caption: String?): FlashResponseDto {
         val artist = tattooArtistService.findById(artistId)
-        if (flashRepository.countByArtistId(artistId) >= MAX_FLASHES) throw FlashLimitReachedException()
+        val flashes = flashRepository.findByArtistIdOrderByPositionAsc(artistId)
+        if (flashes.size >= MAX_FLASHES) throw FlashLimitReachedException()
         val upload = imageUploadService.uploadFlashImage(artistId, image)
-        val firstPosition = flashRepository.findFirstByArtistIdOrderByPositionAsc(artistId)?.position ?: 1
         val flash = flashRepository.save(
             Flash(
                 artist = artist,
                 imageKey = upload.key,
                 caption = caption?.takeIf { it.isNotBlank() },
-                position = firstPosition - 1,
+                // One below the lowest position puts it first without renumbering; gaps and negatives
+                // are harmless since positions only sort, and the next reorder rewrites them to 0..n-1.
+                position = (flashes.firstOrNull()?.position ?: 1) - 1,
             )
         )
         return FlashResponseDto(flash, upload.url)

@@ -8,7 +8,5 @@ import java.util.UUID
 @Repository
 interface FlashRepository : JpaRepository<Flash, UUID> {
     fun findByArtistIdOrderByPositionAsc(artistId: UUID): List<Flash>
-    fun findFirstByArtistIdOrderByPositionAsc(artistId: UUID): Flash?
     fun findByIdAndArtistId(id: UUID, artistId: UUID): Flash?
-    fun countByArtistId(artistId: UUID): Long
 }

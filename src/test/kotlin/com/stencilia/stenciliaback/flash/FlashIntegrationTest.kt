@@ -182,7 +182,7 @@ class FlashIntegrationTest : AbstractIntegrationTest() {
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.error").value("An artist can have at most 50 flashes"))
 
-        assertThat(flashRepository.countByArtistId(artist.id)).isEqualTo(50)
+        assertThat(flashRepository.findByArtistIdOrderByPositionAsc(artist.id)).hasSize(50)
     }
 
     @Test
