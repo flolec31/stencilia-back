@@ -25,3 +25,5 @@ databaseChangeLog:
       path: db/changelog/85-on-demand-metrics/
   - includeAll:
       path: db/changelog/78-field-length-limits/
+  - includeAll:
+      path: db/changelog/79-flashes/

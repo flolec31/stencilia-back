@@ -6,10 +6,10 @@ import com.stencilia.stenciliaback.auth.artist.service.AuthService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
+import com.stencilia.stenciliaback.security.subjectId
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import java.util.UUID
 
 @RestController
 @RequestMapping("/auth/artist")
@@ -59,7 +59,7 @@ class ArtistAuthController(
         @Valid @RequestBody request: ChangePasswordRequestDto,
         authentication: JwtAuthenticationToken,
     ): LoginResponseDto {
-        val artistId = UUID.fromString(authentication.token.subject)
+        val artistId = authentication.subjectId
         return authService.changePassword(artistId, request)
     }
 }

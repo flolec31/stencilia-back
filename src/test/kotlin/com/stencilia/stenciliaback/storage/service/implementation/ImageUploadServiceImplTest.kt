@@ -58,6 +58,18 @@ class ImageUploadServiceImplTest {
     }
 
     @Test
+    fun `uploadFlashImage returns key under flashes prefix`() {
+        val photo = MockMultipartFile("photo", "flash.webp", "image/webp", ByteArray(100))
+        `when`(storageService.upload(any(), any(), eq("image/webp")))
+            .thenReturn("https://r2.example.com/signed-url")
+
+        val result = service.uploadFlashImage(artistId, photo)
+
+        assertThat(result.key).matches("flashes/$artistId/[0-9a-f\\-]{36}")
+        assertThat(result.url).isEqualTo("https://r2.example.com/signed-url")
+    }
+
+    @Test
     fun `uploadReference throws InvalidImageContentTypeException for unsupported type`() {
         val photo = MockMultipartFile("photo", "file.pdf", "application/pdf", ByteArray(100))
 

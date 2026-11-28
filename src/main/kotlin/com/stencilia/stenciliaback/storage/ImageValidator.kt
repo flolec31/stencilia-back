@@ -7,7 +7,7 @@ import org.springframework.web.multipart.MultipartFile
 
 /**
  * Single source of truth for image upload validation, shared by every image entry point
- * (appointment references, support screenshots, message images, artist profile photos).
+ * (appointment references, support screenshots, message images, flash images, artist profile photos).
  */
 @Component
 class ImageValidator {
