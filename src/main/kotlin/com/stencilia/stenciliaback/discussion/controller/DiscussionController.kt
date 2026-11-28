@@ -8,6 +8,7 @@ import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import com.stencilia.stenciliaback.security.subjectId
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
@@ -24,7 +25,7 @@ class DiscussionController(
         authentication: JwtAuthenticationToken,
         @PathVariable appointmentId: UUID,
     ): List<MessageResponseDto> {
-        val artistId = UUID.fromString(authentication.token.subject)
+        val artistId = authentication.subjectId
         return discussionService.getMessages(artistId, appointmentId)
     }
 
@@ -35,7 +36,7 @@ class DiscussionController(
         @PathVariable appointmentId: UUID,
         @Valid @RequestBody request: MessageRequestDto,
     ): MessageResponseDto {
-        val artistId = UUID.fromString(authentication.token.subject)
+        val artistId = authentication.subjectId
         return discussionService.postMessage(artistId, appointmentId, request.content, request.imageKey)
     }
 
@@ -46,7 +47,7 @@ class DiscussionController(
         @PathVariable appointmentId: UUID,
         @RequestParam("image") image: MultipartFile,
     ): ImageUploadResponseDto {
-        val artistId = UUID.fromString(authentication.token.subject)
+        val artistId = authentication.subjectId
         return discussionService.uploadMessageImage(artistId, appointmentId, image)
     }
 }

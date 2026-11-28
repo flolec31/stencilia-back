@@ -8,6 +8,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import com.stencilia.stenciliaback.security.subjectId
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
@@ -23,7 +24,7 @@ class FlashController(
 
     @GetMapping
     fun getFlashes(authentication: JwtAuthenticationToken): List<FlashResponseDto> =
-        flashService.getFlashes(artistId(authentication))
+        flashService.getFlashes(authentication.subjectId)
 
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
@@ -32,7 +33,7 @@ class FlashController(
         @RequestParam("image") image: MultipartFile,
         @RequestParam(required = false) @Size(max = 255) caption: String?,
     ): FlashResponseDto =
-        flashService.create(artistId(authentication), image, caption)
+        flashService.create(authentication.subjectId, image, caption)
 
     @PatchMapping("/{flashId}")
     fun updateCaption(
@@ -40,22 +41,19 @@ class FlashController(
         @PathVariable flashId: UUID,
         @Valid @RequestBody request: FlashCaptionRequestDto,
     ): FlashResponseDto =
-        flashService.updateCaption(artistId(authentication), flashId, request.caption)
+        flashService.updateCaption(authentication.subjectId, flashId, request.caption)
 
     @DeleteMapping("/{flashId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(
         authentication: JwtAuthenticationToken,
         @PathVariable flashId: UUID,
-    ) = flashService.delete(artistId(authentication), flashId)
+    ) = flashService.delete(authentication.subjectId, flashId)
 
     @PutMapping("/order")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun reorder(
         authentication: JwtAuthenticationToken,
         @Valid @RequestBody request: FlashOrderRequestDto,
-    ) = flashService.reorder(artistId(authentication), request.flashIds)
-
-    private fun artistId(authentication: JwtAuthenticationToken): UUID =
-        UUID.fromString(authentication.token.subject)
+    ) = flashService.reorder(authentication.subjectId, request.flashIds)
 }

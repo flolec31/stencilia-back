@@ -10,11 +10,11 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import com.stencilia.stenciliaback.security.subjectId
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import java.util.*
 
 @RestController
 @RequestMapping("/artists")
@@ -34,7 +34,7 @@ class TattooArtistController(
         @Valid @RequestBody request: UpdateProfileRequestDto,
         authentication: JwtAuthenticationToken
     ): ProfileResponseDto {
-        val artistId = UUID.fromString(authentication.token.subject)
+        val artistId = authentication.subjectId
         if (request.slug != null && tattooArtistService.existsBySlugAndIdNot(request.slug, artistId)) {
             throw SlugAlreadyTakenException()
         }
@@ -45,7 +45,7 @@ class TattooArtistController(
     fun getProfile(
         authentication: JwtAuthenticationToken
     ): ProfileResponseDto {
-        val artistId = UUID.fromString(authentication.token.subject)
+        val artistId = authentication.subjectId
         return tattooArtistService.getProfile(artistId)
     }
 
@@ -56,7 +56,7 @@ class TattooArtistController(
     @DeleteMapping("/me/photo")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deletePhoto(authentication: JwtAuthenticationToken) {
-        val artistId = UUID.fromString(authentication.token.subject)
+        val artistId = authentication.subjectId
         tattooArtistService.deletePhoto(artistId)
     }
 
@@ -65,7 +65,7 @@ class TattooArtistController(
         @RequestParam("photo") photo: MultipartFile,
         authentication: JwtAuthenticationToken
     ): PhotoUploadResponseDto {
-        val artistId = UUID.fromString(authentication.token.subject)
+        val artistId = authentication.subjectId
         val photoUrl = tattooArtistService.updatePhoto(artistId, photo)
         return PhotoUploadResponseDto(photoUrl = photoUrl)
     }
