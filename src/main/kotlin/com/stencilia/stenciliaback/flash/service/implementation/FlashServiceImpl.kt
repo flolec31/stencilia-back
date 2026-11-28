@@ -24,7 +24,8 @@ class FlashServiceImpl(
 ) : FlashService {
 
     override fun getFlashes(artistId: UUID): List<FlashResponseDto> =
-        flashRepository.findByArtistIdOrderByPositionAsc(artistId).map(::toDto)
+        flashRepository.findByArtistIdOrderByPositionAsc(artistId)
+            .map { FlashResponseDto(it, storageService.getSignedUrl(it.imageKey)) }
 
     @Transactional
     override fun create(artistId: UUID, image: MultipartFile, caption: String?): FlashResponseDto {
@@ -47,7 +48,7 @@ class FlashServiceImpl(
     override fun updateCaption(artistId: UUID, flashId: UUID, caption: String?): FlashResponseDto {
         val flash = findOwnedFlash(artistId, flashId)
         flash.caption = caption?.takeIf { it.isNotBlank() }
-        return toDto(flash)
+        return FlashResponseDto(flash, storageService.getSignedUrl(flash.imageKey))
     }
 
     @Transactional
@@ -67,6 +68,4 @@ class FlashServiceImpl(
 
     private fun findOwnedFlash(artistId: UUID, flashId: UUID): Flash =
         flashRepository.findByIdAndArtistId(flashId, artistId) ?: throw FlashNotFoundException()
-
-    private fun toDto(flash: Flash) = FlashResponseDto(flash, storageService.getSignedUrl(flash.imageKey))
 }
