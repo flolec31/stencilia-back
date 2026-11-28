@@ -7,7 +7,6 @@ import com.stencilia.stenciliaback.flash.exception.*
 import com.stencilia.stenciliaback.flash.repository.FlashRepository
 import com.stencilia.stenciliaback.flash.service.FlashService
 import com.stencilia.stenciliaback.flash.service.FlashService.Companion.MAX_FLASHES
-import com.stencilia.stenciliaback.storage.dto.ImageUploadResponseDto
 import com.stencilia.stenciliaback.storage.service.ImageUploadService
 import com.stencilia.stenciliaback.storage.service.StorageService
 import org.springframework.stereotype.Service
@@ -27,28 +26,21 @@ class FlashServiceImpl(
     override fun getFlashes(artistId: UUID): List<FlashResponseDto> =
         flashRepository.findByArtistIdOrderByPositionAsc(artistId).map(::toDto)
 
-    override fun uploadImage(artistId: UUID, image: MultipartFile): ImageUploadResponseDto {
-        // Fails fast so a full list does not leave an orphan image in storage.
-        if (flashRepository.countByArtistId(artistId) >= MAX_FLASHES) throw FlashLimitReachedException()
-        return imageUploadService.uploadFlashImage(artistId, image)
-    }
-
     @Transactional
-    override fun create(artistId: UUID, imageKey: String, caption: String?): FlashResponseDto {
-        if (!imageKey.startsWith("flashes/$artistId/")) throw InvalidFlashImageKeyException()
+    override fun create(artistId: UUID, image: MultipartFile, caption: String?): FlashResponseDto {
         val artist = tattooArtistService.findById(artistId)
         if (flashRepository.countByArtistId(artistId) >= MAX_FLASHES) throw FlashLimitReachedException()
-        if (flashRepository.existsByImageKey(imageKey)) throw FlashImageAlreadyUsedException()
+        val upload = imageUploadService.uploadFlashImage(artistId, image)
         val firstPosition = flashRepository.findFirstByArtistIdOrderByPositionAsc(artistId)?.position ?: 1
         val flash = flashRepository.save(
             Flash(
                 artist = artist,
-                imageKey = imageKey,
+                imageKey = upload.key,
                 caption = caption?.takeIf { it.isNotBlank() },
                 position = firstPosition - 1,
             )
         )
-        return toDto(flash)
+        return FlashResponseDto(flash, upload.url)
     }
 
     @Transactional

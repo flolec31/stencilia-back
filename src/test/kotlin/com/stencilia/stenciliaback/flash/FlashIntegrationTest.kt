@@ -100,103 +100,45 @@ class FlashIntegrationTest : AbstractIntegrationTest() {
             )
         )
 
-    private fun createFlash(token: String, imageKey: String, caption: String? = null) =
+    private fun pngImage() = MockMultipartFile("image", "flash.png", "image/png", ByteArray(100))
+
+    private fun createFlash(token: String?, image: MockMultipartFile? = pngImage(), caption: String? = null) =
         mockMvc.perform(
-            post("/artists/me/flashes")
-                .header("Authorization", "Bearer $token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(mapOf("imageKey" to imageKey, "caption" to caption)))
+            multipart("/artists/me/flashes")
+                .apply { image?.let { file(it) } }
+                .apply { caption?.let { param("caption", it) } }
+                .apply { token?.let { header("Authorization", "Bearer $it") } }
         )
 
     private fun orderedIds(artist: TattooArtist) =
         flashRepository.findByArtistIdOrderByPositionAsc(artist.id).map { it.id }
 
-    // --- POST /artists/me/flashes/image ---
-
-    @Test
-    fun `upload image returns 201 with a key in the artist flash namespace and a signed url`() {
-        val artist = createActivatedArtist()
-
-        mockMvc.perform(
-            multipart("/artists/me/flashes/image")
-                .file(MockMultipartFile("image", "flash.png", "image/png", ByteArray(100)))
-                .header("Authorization", "Bearer ${tokenFor(artist)}")
-        )
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.key").value(matchesPattern("flashes/${artist.id}/[0-9a-f\\-]{36}")))
-            .andExpect(jsonPath("$.url").value(containsString("X-Amz-Signature")))
-    }
-
-    @Test
-    fun `upload image with invalid content type returns 400`() {
-        val artist = createActivatedArtist()
-
-        mockMvc.perform(
-            multipart("/artists/me/flashes/image")
-                .file(MockMultipartFile("image", "flash.pdf", "application/pdf", ByteArray(100)))
-                .header("Authorization", "Bearer ${tokenFor(artist)}")
-        )
-            .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.error").value("Image must be a JPEG, PNG, or WebP image"))
-    }
-
-    @Test
-    fun `upload image returns 409 when the artist already has 50 flashes`() {
-        val artist = createActivatedArtist()
-        repeat(50) { saveFlash(artist, it) }
-
-        mockMvc.perform(
-            multipart("/artists/me/flashes/image")
-                .file(MockMultipartFile("image", "flash.png", "image/png", ByteArray(100)))
-                .header("Authorization", "Bearer ${tokenFor(artist)}")
-        )
-            .andExpect(status().isConflict)
-            .andExpect(jsonPath("$.error").value("An artist can have at most 50 flashes"))
-    }
-
-    @Test
-    fun `upload image returns 401 when unauthenticated`() {
-        mockMvc.perform(
-            multipart("/artists/me/flashes/image")
-                .file(MockMultipartFile("image", "flash.png", "image/png", ByteArray(100)))
-        ).andExpect(status().isUnauthorized)
-    }
-
-    @Test
-    fun `upload image returns 403 for a client token`() {
-        val clientToken = jwtService.generateAccessToken(UUID.randomUUID(), Role.CLIENT)
-
-        mockMvc.perform(
-            multipart("/artists/me/flashes/image")
-                .file(MockMultipartFile("image", "flash.png", "image/png", ByteArray(100)))
-                .header("Authorization", "Bearer $clientToken")
-        ).andExpect(status().isForbidden)
-    }
-
     // --- POST /artists/me/flashes ---
 
     @Test
-    fun `create flash returns 201 and puts it in first position with its caption`() {
+    fun `create flash returns 201, stores the image and puts the flash first with its caption`() {
         val artist = createActivatedArtist()
         val existing = saveFlash(artist, 0)
-        val imageKey = "flashes/${artist.id}/${UUID.randomUUID()}"
 
-        createFlash(tokenFor(artist), imageKey, "Rose and dagger")
+        createFlash(tokenFor(artist), caption = "Rose and dagger")
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.id").isString)
             .andExpect(jsonPath("$.caption").value("Rose and dagger"))
             .andExpect(jsonPath("$.imageUrl").value(containsString("X-Amz-Signature")))
 
         val flashes = flashRepository.findByArtistIdOrderByPositionAsc(artist.id)
-        assertThat(flashes.map { it.imageKey }).containsExactly(imageKey, existing.imageKey)
-        assertThat(flashes.first().caption).isEqualTo("Rose and dagger")
+        assertThat(flashes.map { it.id }.last()).isEqualTo(existing.id)
+        val created = flashes.first()
+        assertThat(created.caption).isEqualTo("Rose and dagger")
+        assertThat(created.imageKey).matches("flashes/${artist.id}/[0-9a-f\\-]{36}")
+        assertThat(s3ObjectExists(created.imageKey)).isTrue()
     }
 
     @Test
     fun `create flash without caption saves no caption`() {
         val artist = createActivatedArtist()
 
-        createFlash(tokenFor(artist), "flashes/${artist.id}/${UUID.randomUUID()}")
+        createFlash(tokenFor(artist))
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.caption").value(null as String?))
 
@@ -207,8 +149,7 @@ class FlashIntegrationTest : AbstractIntegrationTest() {
     fun `create flash with blank caption saves no caption`() {
         val artist = createActivatedArtist()
 
-        createFlash(tokenFor(artist), "flashes/${artist.id}/${UUID.randomUUID()}", "   ")
-            .andExpect(status().isCreated)
+        createFlash(tokenFor(artist), caption = "   ").andExpect(status().isCreated)
 
         assertThat(flashRepository.findAll().single().caption).isNull()
     }
@@ -218,8 +159,7 @@ class FlashIntegrationTest : AbstractIntegrationTest() {
         val artist = createActivatedArtist()
         val atLimit = "a".repeat(255)
 
-        createFlash(tokenFor(artist), "flashes/${artist.id}/${UUID.randomUUID()}", atLimit)
-            .andExpect(status().isCreated)
+        createFlash(tokenFor(artist), caption = atLimit).andExpect(status().isCreated)
 
         assertThat(flashRepository.findAll().single().caption).isEqualTo(atLimit)
     }
@@ -228,8 +168,7 @@ class FlashIntegrationTest : AbstractIntegrationTest() {
     fun `create flash with a caption over 255 characters returns 400 and saves nothing`() {
         val artist = createActivatedArtist()
 
-        createFlash(tokenFor(artist), "flashes/${artist.id}/${UUID.randomUUID()}", "a".repeat(256))
-            .andExpect(status().isBadRequest)
+        createFlash(tokenFor(artist), caption = "a".repeat(256)).andExpect(status().isBadRequest)
 
         assertThat(flashRepository.count()).isZero()
     }
@@ -239,7 +178,7 @@ class FlashIntegrationTest : AbstractIntegrationTest() {
         val artist = createActivatedArtist()
         repeat(50) { saveFlash(artist, it) }
 
-        createFlash(tokenFor(artist), "flashes/${artist.id}/${UUID.randomUUID()}")
+        createFlash(tokenFor(artist))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.error").value("An artist can have at most 50 flashes"))
 
@@ -247,51 +186,33 @@ class FlashIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `create flash returns 400 when the image key belongs to another artist`() {
+    fun `create flash with invalid content type returns 400 and saves nothing`() {
         val artist = createActivatedArtist()
 
-        createFlash(tokenFor(artist), "flashes/${UUID.randomUUID()}/${UUID.randomUUID()}")
+        createFlash(tokenFor(artist), MockMultipartFile("image", "flash.pdf", "application/pdf", ByteArray(100)))
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.error").value("The image key does not belong to you"))
+            .andExpect(jsonPath("$.error").value("Image must be a JPEG, PNG, or WebP image"))
+
+        assertThat(flashRepository.count()).isZero()
     }
 
     @Test
-    fun `create flash returns 400 when the image key is outside the flash namespace`() {
+    fun `create flash without an image returns 400`() {
         val artist = createActivatedArtist()
 
-        createFlash(tokenFor(artist), "messages/${artist.id}/${UUID.randomUUID()}")
-            .andExpect(status().isBadRequest)
-    }
+        createFlash(tokenFor(artist), image = null, caption = "no image").andExpect(status().isBadRequest)
 
-    @Test
-    fun `create flash returns 409 when the image is already used by another flash`() {
-        val artist = createActivatedArtist()
-        val existing = saveFlash(artist, 0)
-
-        createFlash(tokenFor(artist), existing.imageKey)
-            .andExpect(status().isConflict)
-            .andExpect(jsonPath("$.error").value("This image is already used by another flash"))
-    }
-
-    @Test
-    fun `create flash returns 400 when the image key is missing`() {
-        val artist = createActivatedArtist()
-
-        mockMvc.perform(
-            post("/artists/me/flashes")
-                .header("Authorization", "Bearer ${tokenFor(artist)}")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"caption":"no image"}""")
-        ).andExpect(status().isBadRequest)
+        assertThat(flashRepository.count()).isZero()
     }
 
     @Test
     fun `create flash returns 401 when unauthenticated`() {
-        mockMvc.perform(
-            post("/artists/me/flashes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"imageKey":"flashes/x/y"}""")
-        ).andExpect(status().isUnauthorized)
+        createFlash(token = null).andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `create flash returns 403 for a client token`() {
+        createFlash(jwtService.generateAccessToken(UUID.randomUUID(), Role.CLIENT)).andExpect(status().isForbidden)
     }
 
     // --- GET /artists/me/flashes ---
@@ -493,12 +414,10 @@ class FlashIntegrationTest : AbstractIntegrationTest() {
         val a = saveFlash(artist, 0)
         val b = saveFlash(artist, 1)
         reorder(tokenFor(artist), listOf(b.id, a.id)).andExpect(status().isNoContent)
-        val imageKey = "flashes/${artist.id}/${UUID.randomUUID()}"
 
-        createFlash(tokenFor(artist), imageKey).andExpect(status().isCreated)
+        createFlash(tokenFor(artist)).andExpect(status().isCreated)
 
-        assertThat(flashRepository.findByArtistIdOrderByPositionAsc(artist.id).map { it.imageKey })
-            .containsExactly(imageKey, b.imageKey, a.imageKey)
+        assertThat(orderedIds(artist).drop(1)).containsExactly(b.id, a.id)
     }
 
     @Test

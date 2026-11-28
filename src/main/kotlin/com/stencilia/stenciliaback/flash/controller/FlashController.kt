@@ -2,20 +2,21 @@ package com.stencilia.stenciliaback.flash.controller
 
 import com.stencilia.stenciliaback.flash.dto.FlashCaptionRequestDto
 import com.stencilia.stenciliaback.flash.dto.FlashOrderRequestDto
-import com.stencilia.stenciliaback.flash.dto.FlashRequestDto
 import com.stencilia.stenciliaback.flash.dto.FlashResponseDto
 import com.stencilia.stenciliaback.flash.service.FlashService
-import com.stencilia.stenciliaback.storage.dto.ImageUploadResponseDto
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 
 @RestController
 @RequestMapping("/artists/me/flashes")
+@Validated
 class FlashController(
     private val flashService: FlashService,
 ) {
@@ -24,21 +25,14 @@ class FlashController(
     fun getFlashes(authentication: JwtAuthenticationToken): List<FlashResponseDto> =
         flashService.getFlashes(artistId(authentication))
 
-    @PostMapping("/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    @ResponseStatus(HttpStatus.CREATED)
-    fun uploadImage(
-        authentication: JwtAuthenticationToken,
-        @RequestParam("image") image: MultipartFile,
-    ): ImageUploadResponseDto =
-        flashService.uploadImage(artistId(authentication), image)
-
-    @PostMapping
+    @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
     fun create(
         authentication: JwtAuthenticationToken,
-        @Valid @RequestBody request: FlashRequestDto,
+        @RequestParam("image") image: MultipartFile,
+        @RequestParam(required = false) @Size(max = 255) caption: String?,
     ): FlashResponseDto =
-        flashService.create(artistId(authentication), request.imageKey, request.caption)
+        flashService.create(artistId(authentication), image, caption)
 
     @PatchMapping("/{flashId}")
     fun updateCaption(

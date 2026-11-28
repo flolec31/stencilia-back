@@ -11,5 +11,4 @@ interface FlashRepository : JpaRepository<Flash, UUID> {
     fun findFirstByArtistIdOrderByPositionAsc(artistId: UUID): Flash?
     fun findByIdAndArtistId(id: UUID, artistId: UUID): Flash?
     fun countByArtistId(artistId: UUID): Long
-    fun existsByImageKey(imageKey: String): Boolean
 }

@@ -80,8 +80,7 @@ Tests spin up Postgres and s3mock via Testcontainers automatically. `EmailServic
 | POST   | `/artists/me/photo`                | JWT    | Upload profile photo                     |
 | DELETE | `/artists/me/photo`                | JWT    | Delete profile photo                     |
 | GET    | `/artists/me/flashes`              | JWT    | List own flashes in display order        |
-| POST   | `/artists/me/flashes/image`        | JWT    | Upload a flash image (multipart `image`), returns its key |
-| POST   | `/artists/me/flashes`              | JWT    | Add a flash (`{ imageKey, caption? }`) in first position, max 50 |
+| POST   | `/artists/me/flashes`              | JWT    | Add a flash (multipart `image` + optional `caption`) in first position, max 50 |
 | PATCH  | `/artists/me/flashes/{id}`         | JWT    | Update a flash caption (`{ caption }`)   |
 | DELETE | `/artists/me/flashes/{id}`         | JWT    | Remove a flash and its image             |
 | PUT    | `/artists/me/flashes/order`        | JWT    | Save the full flash order (`{ flashIds }`) |

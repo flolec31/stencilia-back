@@ -10,7 +10,6 @@ CREATE TABLE flash
     position   INTEGER       NOT NULL,
     created_at TIMESTAMPTZ   NOT NULL,
     CONSTRAINT pk_flash PRIMARY KEY (id),
-    CONSTRAINT uq_flash_image_key UNIQUE (image_key),
     CONSTRAINT fk_flash_artist FOREIGN KEY (artist_id) REFERENCES tattoo_artist (id) ON DELETE CASCADE
 );
 CREATE INDEX idx_flash_artist_id_position ON flash (artist_id, position);

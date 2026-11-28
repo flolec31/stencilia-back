@@ -18,14 +18,6 @@ class FlashControllerAdvice : AbstractControllerAdvice() {
     @ResponseStatus(HttpStatus.CONFLICT)
     fun handleFlashLimitReached(e: FlashLimitReachedException) = handleException(e)
 
-    @ExceptionHandler(FlashImageAlreadyUsedException::class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    fun handleFlashImageAlreadyUsed(e: FlashImageAlreadyUsedException) = handleException(e)
-
-    @ExceptionHandler(InvalidFlashImageKeyException::class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleInvalidFlashImageKey(e: InvalidFlashImageKeyException) = handleException(e)
-
     @ExceptionHandler(InvalidFlashOrderException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleInvalidFlashOrder(e: InvalidFlashOrderException) = handleException(e)
