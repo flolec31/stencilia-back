@@ -8,4 +8,5 @@ interface ImageUploadService {
     fun uploadReference(artistId: UUID, photo: MultipartFile): ImageUploadResponseDto
     fun uploadSupportScreenshot(artistId: UUID, photo: MultipartFile): ImageUploadResponseDto
     fun uploadMessageImage(artistId: UUID, photo: MultipartFile): ImageUploadResponseDto
+    fun uploadFlashImage(artistId: UUID, photo: MultipartFile): ImageUploadResponseDto
 }

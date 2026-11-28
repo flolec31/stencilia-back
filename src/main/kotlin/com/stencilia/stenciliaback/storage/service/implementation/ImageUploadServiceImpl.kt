@@ -24,6 +24,9 @@ class ImageUploadServiceImpl(
     override fun uploadMessageImage(artistId: UUID, photo: MultipartFile): ImageUploadResponseDto =
         upload("messages", artistId, photo)
 
+    override fun uploadFlashImage(artistId: UUID, photo: MultipartFile): ImageUploadResponseDto =
+        upload("flashes", artistId, photo)
+
     private fun upload(prefix: String, artistId: UUID, photo: MultipartFile): ImageUploadResponseDto {
         imageValidator.validate(photo)
 

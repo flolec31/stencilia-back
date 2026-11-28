@@ -79,17 +79,35 @@ Tests spin up Postgres and s3mock via Testcontainers automatically. `EmailServic
 | PATCH  | `/artists/me`                      | JWT    | Update profile                           |
 | POST   | `/artists/me/photo`                | JWT    | Upload profile photo                     |
 | DELETE | `/artists/me/photo`                | JWT    | Delete profile photo                     |
+| GET    | `/artists/me/flashes`              | JWT    | List own flashes in display order        |
+| POST   | `/artists/me/flashes/image`        | JWT    | Upload a flash image (multipart `image`), returns its key |
+| POST   | `/artists/me/flashes`              | JWT    | Add a flash (`{ imageKey, caption? }`) in first position, max 50 |
+| PATCH  | `/artists/me/flashes/{id}`         | JWT    | Update a flash caption (`{ caption }`)   |
+| DELETE | `/artists/me/flashes/{id}`         | JWT    | Remove a flash and its image             |
+| PUT    | `/artists/me/flashes/order`        | JWT    | Save the full flash order (`{ flashIds }`) |
 | POST   | `/appointment/{slug}`              | public | Submit appointment request               |
 | POST   | `/appointment/{slug}/reference`    | public | Upload reference photo                   |
 | GET    | `/appointment/verify`              | public | Verify appointment (client email link)   |
+| POST   | `/appointment/{slug}/links`        | public | Email a client their appointment links (always 204) |
 | GET    | `/appointment/inbox`               | JWT    | List own non-archived requests, batched (20/page). Optional `?new=true`/`?unread=true` (both → OR); ordered new, then unread, then recent |
 | GET    | `/appointment/archive`             | JWT    | List own archived requests, batched (20/page), most recent first |
 | GET    | `/appointment/{id}`                | JWT    | Get appointment details                  |
 | POST   | `/appointment/{id}/archive`        | JWT    | Archive appointment                      |
 | POST   | `/appointment/{id}/unarchive`      | JWT    | Unarchive appointment                    |
 | POST   | `/appointment/{id}/mark-new`       | JWT    | Mark appointment as new                  |
+| GET    | `/appointment/{id}/messages`       | JWT    | Get the message thread (marks client messages read) |
+| POST   | `/appointment/{id}/messages`       | JWT    | Send a message (`{ content?, imageKey? }`) |
+| POST   | `/appointment/{id}/messages/image` | JWT    | Upload a message image (multipart `image`), returns its key |
+| GET    | `/client/appointment/{id}`         | client JWT | Get own appointment details          |
+| GET    | `/client/appointment/{id}/messages` | client JWT | Get the message thread (marks artist messages read) |
+| POST   | `/client/appointment/{id}/messages` | client JWT | Send a message (`{ content?, imageKey? }`) |
+| POST   | `/client/appointment/{id}/messages/image` | client JWT | Upload a message image (multipart `image`), returns its key |
 | POST   | `/support/screenshot`              | JWT    | Upload support message screenshot        |
 | POST   | `/support`                         | JWT    | Submit a support/contact message         |
+| GET    | `/actuator/health`                 | public | Liveness/readiness healthcheck           |
+| GET    | `/actuator/prometheus`             | basic  | Prometheus metrics scrape (`APP_METRICS_USERNAME`/`APP_METRICS_PASSWORD`) |
+
+`JWT` means an artist access token, `client JWT` a client access token (from `/auth/client/verify-code`).
 
 Swagger UI is disabled in production (`springdoc.swagger-ui.enabled: false`). Enable it locally by overriding in `application-local.yaml`.
 
