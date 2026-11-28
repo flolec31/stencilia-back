@@ -84,6 +84,7 @@ This is a Spring Boot application using Kotlin + Spring Boot 4 + Java 24 + Gradl
 
 **Kotlin conventions:**
 - Use the `$$` string prefix for `@Value` annotations to avoid escaping `$`: `@Value($$"${some.property}")` not `@Value("\${some.property}")`.
+- Controllers read the caller's id with the `authentication.subjectId` extension (`security/JwtAuthenticationTokenExtensions.kt`), never by parsing `token.subject` themselves. It's the artist or client id depending on the route; the role is already enforced by `SecurityConfig`.
 
 **Input length limits** — every free-text request field and every list has a server-enforced max via bean validation (`@Size`), so an over-long value is a `400` (Spring's default bean-validation response), never a truncation or a server error, and never exceeds the backing column. Default categories: names 100, emails 254, single-line short texts 255, multi-line long texts 2000, lists capped per endpoint (references max 10, flash order max 50); fields with a stricter format rule (slug, 6-digit access code, password) keep it, and passwords additionally cap at 72 so an over-72-byte value is a clean `400` rather than a BCrypt error. Server-issued identifiers replayed by the client (storage keys, reset token) are bounded to their column capacity; opaque UUID tokens (refresh tokens, verify token) are not length-constrained because a bad value is already rejected cleanly. The full per-field inventory is maintained on back issue #78.
 
